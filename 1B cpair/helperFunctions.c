@@ -8,16 +8,16 @@ void usage(void) {
     exit(EXIT_FAILURE);
 }
 
-struct Point {
+typedef struct {
     float x, y;
-} ;
+} Point;
 
-struct Pair // holds a pair of point and the distance between them
+typedef struct // holds a pair of point and the distance between them
 {
     Point p1; // first point
     Point p2; // second point
     float dist; // distance between p1 and p2
-};
+} Pair;
 
 
 int is_float(char *str) {
@@ -45,7 +45,7 @@ void remove_all_chars(char *str, char c) {
     *pw = '\0';
 }
 
-double distance(struct Point p1, struct Point p2) {
+double distance(Point p1, Point p2) {
     float dx = p1.x - p2.x;
     float dy = p1.y - p2.y;
     return sqrtf(dx * dx + dy * dy);
