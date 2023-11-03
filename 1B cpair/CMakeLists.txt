@@ -5,4 +5,4 @@ set(CMAKE_CXX_STANDARD 99)
 
 include_directories(".")
 
-add_executable(cpair "cpair.c")
+add_executable(cpair "cpair.c" "cpair.h")

@@ -9,6 +9,8 @@
 #ifndef OSVU23_CPAIR_H
 #define OSVU23_CPAIR_H
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -69,6 +71,12 @@ typedef struct Pair // holds a pair of point and the distance between them
 
 /**
  * @brief is_float checks if the string is a float
+ *
+ * If no digits were found
+ * If the string starts with a space, it is not considered a valid float
+ * Checks for any leftover characters after the number
+ * check if out of range of representable values of strtod
+ *
  * @param str input string pointer
  * @return returns 1 if true and 0 if false
  */
@@ -76,33 +84,31 @@ int is_float(char *str) {
     char *endptr;
     errno = 0;  // To distinguish success/failure after the call to strtod
 
-    // Use strtod to convert to a double
-    strtod(str, &endptr);
+    strtod(str, &endptr); //convert to a double
 
     // Check for various possible errors
-
-    // No digits were found
-    if (endptr == str) {
-        return 0;
-    }
-
-    // If the string starts with a space, it is not considered a valid float
-    if (isspace((unsigned char)*str)) {
-        return 0;
-    }
-
-    // Check for any leftover characters after the number
-    if (*endptr != '\0') {
-        return 0;
-    }
-
-    // If out of range of representable values by strtod
-    if (errno == ERANGE) {
-        return 0;
-    }
+    if (endptr == str) return 0;
+    if (isspace((unsigned char) *str)) return 0;
+    if (*endptr != '\0') return 0;
+    if (errno == ERANGE) return 0;
 
     // If we get here, it's a float
     return 1;
+}
+
+/**
+ * @brief remove_all_chars removes all occurrences c from string str
+ * @copyright Sergey Kalinichenko: https://stackoverflow.com/questions/9895216/how-to-remove-all-occurrences-of-a-given-character-from-string-in-c
+ * @param str input string from where the chars should be removed
+ * @param c character that should be removed
+ */
+void remove_all_chars(char *str, char c) {
+    char *pr = str, *pw = str;
+    while (*pr) {
+        *pw = *pr++;
+        pw += (*pw != c);
+    }
+    *pw = '\0';
 }
 
 #endif //OSVU23_CPAIR_H
