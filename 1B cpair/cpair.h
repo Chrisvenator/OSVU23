@@ -22,6 +22,11 @@
 char *programName;
 
 /**
+ * @brief Number of all Point elements
+ */
+size_t numberOfElements;
+
+/**
  * @brief Structure to represent a point in 2D space.
  *
  * @details
@@ -122,29 +127,124 @@ int is_float(char *str);
 void remove_all_chars(char *str, char c);
 
 /**
- * @brief root calculates the square root of the float n
- * the root function is a backup if the math library is not supported (like on my PC...)
- * Source: https://stackoverflow.com/questions/3581528/how-is-the-square-root-function-implemented
- * @param n
- * @return square root of n
+ * @brief Prints the coordinates of a Pair to standard output.
+ * @details This function takes a Pair structure (which includes two Points and the distance between them)
+ * and prints the coordinates of these points to stdout in ascending order based on the x-coordinate.
+ * If the x-coordinates are the same, it uses the y-coordinate to determine the order.
+ * The coordinates are printed with three decimal places of precision.
+ *
+ * @param pair The Pair structure containing the two points to print.
  */
-//double root(float n){
-//    // Max and min are used to take into account numbers less than 1
-//    double lo = 1, hi = n, mid;
-//
-//    // Update the bounds to be off the target by a factor of 10
-//    while(100 * lo * lo < n) lo *= 10;
-//    while(0.01 * hi * hi > n) hi *= 0.1;
-//
-//    for(int i = 0 ; i < 100 ; i++){
-//        mid = (lo+hi)/2;
-//        if(mid*mid == n) return mid;
-//        if(mid*mid > n) hi = mid;
-//        else lo = mid;
-//    }
-//    return mid;
-//}
+void printPair(Pair pair);
+
+/**
+ * @brief Calculate the arithmetic mean of a coordinate (x or y) over a set of points.
+ * @details This function calculates the arithmetic mean for the specified coordinate (x or y)
+ *          of all points in the provided array. It includes error handling for null pointers
+ *          and zero-element arrays.
+ * @note The coordinate parameter should be 'x' for the x-coordinate mean and 'y' for the y-coordinate mean.
+ *       If the points array is NULL or numberOfElements is zero, the function returns 0 and sets errno
+ *       to EINVAL, indicating an invalid argument and prints to stderr.
+ * @param points A pointer to the first element in an array of Point structs.
+ * @param numberOfElements The number of elements in the points array.
+ * @param coordinate A char indicating which coordinate to calculate the mean of ('x' or 'y').
+ * @return The arithmetic mean as a double value, or 0 if an input error is detected.
+ */
+double calculateArithmeticMean(Point *points, char coordinate);
 
 
+/**
+ * @brief Check if all points have the same coordinates.
+ * @details This function iterates through an array of points and checks whether all points have the same x and y coordinates.
+ *          It assumes the array is not NULL and contains at least one element. The caller should ensure the array is properly initialized.
+ * @param points A pointer to the first element in an array of Point structs.
+ * @param numberOfElements The number of elements in the points array.
+ * @return A boolean value indicating whether all coordinates are the same (true) or not (false).
+ */
+bool checkIfAllCoordinatesAreTheSame(Point *points);
+
+
+/**
+ * @brief Check if all x-coordinates are the same in an array of points.
+ * @details Iterates through the array of points and compares the x-coordinate
+ *          of each point to the x-coordinate of the first point. If any point has
+ *          a different x-coordinate, the function returns false.
+ * @note This function assumes that the points array has at least one element
+ *       and that numberOfElements is the correct length of the array. If the
+ *       array is empty or numberOfElements is incorrect, the behavior is undefined.
+ * @param points A pointer to the first element of an array of Point structures.
+ * @return Returns true if all points in the array have the same x-coordinate, false otherwise.
+ */
+bool checkIfAllXValuesAreTheSame(Point *points);
+
+
+/**
+  * @brief Comparator function for qsort that compares two points by their x-coordinate.
+  * @details This function takes two arguments, casts them to Point types, and compares them based
+  *          on their x-coordinate values. This comparator is intended to be used with the C standard
+  *          library function qsort(). If the first point's x-coordinate is less than the second's,
+  *          it returns -1, indicating that the first point should come before the second in a sorted
+  *          array. If the first point's x-coordinate is greater, it returns 1, indicating that the
+  *          first point should come after the second. If the x-coordinates are equal, it returns 0,
+  *          indicating that the relative order of the points does not need to change.
+  * @note If you need to sort an array of Points where points with equal x-coordinates should be
+  *       sorted based on their y-coordinates, additional logic will be required in this function.
+  * @param a A void pointer to the first element being compared.
+  * @param b A void pointer to the second element being compared.
+  * @return An integer less than, equal to, or greater than zero if the x-coordinate of the first
+  *         point is found, respectively, to be less than, to match, or be greater than that of the
+  *         second point.
+  */
+int compareX(const void *a, const void *b);
+
+/**
+  * @brief Comparator function for qsort that compares two points by their y-coordinate.
+  * @details This function takes two arguments, casts them to Point types, and compares them based
+  *          on their y-coordinate values. This comparator is intended to be used with the C standard
+  *          library function qsort(). If the first point's y-coordinate is less than the second's,
+  *          it returns -1, indicating that the first point should come before the second in a sorted
+  *          array. If the first point's y-coordinate is greater, it returns 1, indicating that the
+  *          first point should come after the second. If the y-coordinates are equal, it returns 0,
+  *          indicating that the relative order of the points does not need to change.
+  * @note If you need to sort an array of Points where points with equal y-coordinates should be
+  *       sorted based on their x-coordinates, additional logic will be required in this function.
+  * @param a A void pointer to the first element being compared.
+  * @param b A void pointer to the second element being compared.
+  * @return An integer less than, equal to, or greater than zero if the y-coordinate of the first
+  *         point is found, respectively, to be less than, to match, or be greater than that of the
+  *         second point.
+  */
+int compareY(const void *a, const void *b);
+
+/**
+ * @brief Divides the array of points into a new array containing points in the specified range.
+ * @details This function allocates a new array of Points containing the elements from 'start' to 'end'.
+ *          It is the caller's responsibility to free the allocated memory.
+ * @note Ensure 'start' is less than 'end' and 'end' does not exceed the total number of elements.
+ * @param points The original array of Points.
+ * @param start The starting index for the division.
+ * @param end The ending index (exclusive) for the division.
+ * @return A pointer to of all elements from points from start to end
+ */
+Point *dividePoints(Point *points, size_t start, size_t end);
+
+/**
+ * @brief Gets the index of the first point whose coordinate is greater than or equal to the mean.
+ * @details Iterates through the array of points and checks the specified coordinate (x or y)
+ *          against the mean. It returns the index of the first point that meets or exceeds the mean.
+ * @note Note that the program does only allow x or y coordinates or else it woll abort!
+ * @param points A pointer to the first element in an array of Point structures.
+ * @param mean The mean value to compare against the point's coordinate.
+ * @param size The number of elements in the points array.
+ * @param c The coordinate to check ('x' for x-coordinate, 'y' for y-coordinate).
+ * @return The index of the first point with the specified coordinate greater than or equal to mean,
+ *         or the last index if no such point is found.
+ */
+size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
+
+
+void findClosestPair(Point *points, size_t n);
+
+void executeChild(Point *points, size_t size);
 
 #endif //OSVU23_CPAIR_H
