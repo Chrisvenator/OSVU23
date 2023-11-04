@@ -10,10 +10,9 @@ void usage(void) {
 
 struct Point {
     float x, y;
-} ;
+};
 
-struct Pair // holds a pair of point and the distance between them
-{
+struct Pair {// holds a pair of point and the distance between them
     Point p1; // first point
     Point p2; // second point
     float dist; // distance between p1 and p2
@@ -45,10 +44,45 @@ void remove_all_chars(char *str, char c) {
     *pw = '\0';
 }
 
-double distance(Point p1, Point p2) {
+double distance(struct Point p1, struct Point p2) {
     float dx = p1.x - p2.x;
     float dy = p1.y - p2.y;
     return sqrtf(dx * dx + dy * dy);
+}
+
+int compareX(const void *a, const void *b) {
+    Point *p1 = (Point *) a;
+    Point *p2 = (Point *) b;
+    if (p1->x < p2->x) return -1;
+    if (p1->x > p2->x) return 1;
+    return 0;
+}
+
+
+int compareY(const void *a, const void *b) {
+    Point *p1 = (Point *) a;
+    Point *p2 = (Point *) b;
+    if (p1->y < p2->y) return -1;
+    if (p1->y > p2->y) return 1;
+    return 0;
+}
+
+double calculateArithmeticMean(Point *points, char coordinate) {
+    if (points == NULL || numberOfElements == 0) {
+        errno = EINVAL; // Set errno to indicate an invalid argument error.
+        fprintf(stderr,
+                "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
+                points == NULL, numberOfElements);
+        return 0.0;
+    }
+
+    double mean = 0;
+    for (size_t i = 0; i < (size_t) numberOfElements; i++) {
+        if (coordinate == 'x') mean += points[i].x;
+        if (coordinate == 'y') mean += points[i].y;
+    }
+
+    return (mean / numberOfElements);
 }
 
 
@@ -88,16 +122,34 @@ Point getCoordinates(char *string) {
     return point;
 }
 
+void printPair(Pair pair) {
+    if ((pair.p1.x < pair.p2.x) || (pair.p1.x == pair.p2.x && pair.p1.y < pair.p2.y)) {
+        fprintf(stdout, "%.3f %.3f\n%.3f %.3f\n", pair.p1.x, pair.p1.y, pair.p2.x, pair.p2.y);
+    } else {
+        fprintf(stdout, "%.3f %.3f\n%.3f %.3f\n", pair.p2.x, pair.p2.y, pair.p1.x, pair.p1.y);
+    }
+}
+
+void printPointPointer(Point *points, size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        fprintf(stdout, "\n%.3f %.3f", points[i].x, points[i].y);
+    }
+}
+
+//TODO: rewrite:
 Point *loadData() {
     //TODO: Remove this once stdin is functional
-    FILE *input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
-    if (input == NULL) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
+    FILE *input = stdin;
+    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) <= 0) {
+        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
+        if (input == NULL) {
+            perror("Error opening file");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    //Allocate memory for 10 points of the points []
-    size_t capacity = 1;
+    //Allocate memory for 2 points of the points []
+    size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
         perror("Failed to allocate memory");
@@ -109,8 +161,8 @@ Point *loadData() {
     char *line = NULL;
     size_t size = 0;
 
-    int i = 1; //<-- Count how many elements there have been
-    while (getline(&line, &size, stdin) >= 0) { //TODO: replace with stdin
+    size_t i = 0; //<-- Count how many elements there have been
+    while (getline(&line, &size, input) >= 0) { //TODO: replace with stdin
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
             Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
@@ -124,9 +176,12 @@ Point *loadData() {
         }
 
         points[i] = getCoordinates(line);
-        printf("Point %d:\nx:%f\ny:%f\n\n", i, points[i].x, points[i].y);
+        printf("Point %zu:\nx:%f\ny:%f\n\n", i, points[i].x, points[i].y);
         i++;
     }
+
+    numberOfElements = i;
+//    printf("Number of elements: %f", numberOfElements);
 
 
     free(line); // Free the buffer allocated by getline
@@ -137,4 +192,94 @@ Point *loadData() {
     //TODO: free points
 //    free(points);
     return points;
+}
+
+
+bool checkIfAllCoordinatesAreTheSame(Point *points) {
+    if (points == NULL || numberOfElements == 0) {
+        fprintf(stderr,
+                "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
+                points == NULL, numberOfElements);
+        return false;
+    }
+
+    // Get the first point to compare with others
+    Point firstPoint = points[0];
+
+    for (size_t i = 1; i < numberOfElements; ++i) {
+        if (firstPoint.x != points[i].x || firstPoint.y != points[i].y) {
+            return false; // If any point differs, they are not all the same
+        }
+    }
+
+    return true; // If we've checked all and none differed, they are all the same
+}
+
+bool checkIfAllXValuesAreTheSame(Point *points) {
+    if (points == NULL || numberOfElements == 0) {
+        // Handle invalid input
+        fprintf(stderr, "Invalid input: points is NULL or numberOfElements is 0.\n");
+        return false;
+    }
+
+    Point p0 = points[0];
+    for (size_t i = 1; i < numberOfElements; i++) {
+        if (p0.x != points[i].x) return false;
+    }
+    return true;
+}
+
+
+size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
+    if (points == NULL) {
+        fprintf(stderr, "Invalid input in 'getIndexOfMean': points is NULL.\n");
+        return SIZE_MAX; // Indicates an error.
+    }
+
+    if (size == 0) {
+        fprintf(stderr, "Invalid input in 'getIndexOfMean': size is 0.\n");
+        return SIZE_MAX; // Indicates an error.
+    }
+
+    if (c != 'x' && c != 'y') {
+        fprintf(stderr, "Invalid input in 'getIndexOfMean': parameter c is not x or y. Aborting...\n");
+        return SIZE_MAX; // Indicates an error.
+    }
+
+    for (size_t i = 0; i < size; ++i) {
+        if (c == 'x' && mean <= points[i].x ||
+            c == 'y' && mean <= points[i].y)
+            return i;
+    }
+
+    return size - 1;
+}
+
+
+Point *dividePoints(Point *points, size_t start, size_t end) {
+    if (points == NULL) {
+        fprintf(stderr, "Invalid input in 'dividePoints': points is NULL.\n");
+        assert(0);
+        exit(EXIT_FAILURE);
+    }
+
+    if (start > end || numberOfElements < end) {
+        fprintf(stderr, "Invalid input in 'dividePoints': end is not a valid number.\n");
+        assert(0);
+        exit(EXIT_FAILURE);
+    }
+
+
+    size_t numPoints = end - start;
+    Point *newPoints = malloc(numPoints * sizeof(Point));
+    if (newPoints == NULL) {
+        fprintf(stderr, "Memory allocation failed!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = start, pos = 0; i < end; ++i, ++pos) {
+        newPoints[pos] = points[i];
+    }
+
+    return newPoints;
 }
