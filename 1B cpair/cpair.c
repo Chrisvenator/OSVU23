@@ -57,15 +57,11 @@ void findClosestPair(Point *points, size_t n) {
         exit(EXIT_SUCCESS);
     } else if (checkIfAllXValuesAreTheSame(points) == true) {
         mean = calculateArithmeticMean(points, 'y');
-        printf("\nY-Mean: %.3f", mean);
         qsort(points, (size_t) numberOfElements, sizeof(Point), compareY);
-
         index = getIndexOfMean(points, mean, numberOfElements, 'y');
     } else {
         mean = calculateArithmeticMean(points, 'x');
-        printf("\nX-Mean: %.3f\n\n", mean);
         qsort(points, (size_t) numberOfElements, sizeof(Point), compareX);
-
         index = getIndexOfMean(points, mean, numberOfElements, 'x');
     }
 
@@ -80,30 +76,24 @@ void findClosestPair(Point *points, size_t n) {
     bigger = dividePoints(points, index, numberOfElements); //Size of bigger: numberOfElements - index
 
 
-    printf("\n\n\nLength: %zu\nIndex: %zu", numberOfElements, index);
-    printf("\n\nSmaller:");
-    printPointPointer(smaller, index);
 
-    printf("\n\nBigger:");
-    printPointPointer(bigger, numberOfElements - index);
+    //These vars will be used later:
+//    size_t leftCount = index;
+//    size_t rightCount = numberOfElements - index;
 
 
-    // Execute child processes for each subset of points
-    executeChild(smaller, index);
-    executeChild(bigger, index);
+//    Pair pair1 = newPair(smaller[0], smaller[1]);
+//    Pair pair2 = newPair(bigger[0], bigger[1]);
+//    Pair pair3 = newPairFromTwoPairs(pair1, pair2);
 
-    // Read results from children and wait for them to finish
+    //Print the nearest pair into stdout:
+//    printPair(nearestPair(pair1, pair2, pair3));
+    printPair(calculateNearestPointsBruteForce(points, numberOfElements));
 
-    // Calculate closest pairs and distances
-
-    // Find and write the closest pair
 
     free(smaller);
     free(bigger);
-
+    //TODO: Close all pipes all the time!
 }
 
 
-void executeChild(Point *points, size_t size) {
-    // Fork and exec logic here, with pipe and dup2 to handle input/output redirection
-}

@@ -75,6 +75,11 @@ Point getCoordinates(char *string);
 double distance(struct Point p1, struct Point p2);
 
 /**
+ * same as distance
+ */
+double distancePair(Pair pair);
+
+/**
  * @brief Prints the usage information for the program and exits.
  * This function is typically called when the program is invoked with incorrect arguments.
  * It will print the correct usage format of the program to the standard error and then exit
@@ -246,5 +251,13 @@ size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 void findClosestPair(Point *points, size_t n);
 
 void executeChild(Point *points, size_t size);
+
+Pair calculateNearestPointsBruteForce(Point *points, size_t size);
+
+Pair newPairFromTwoPairs(Pair p1, Pair p2);
+
+Pair nearestPair(Pair p1, Pair p2, Pair p3);
+
+Pair newPair(Point p1, Point p2);
 
 #endif //OSVU23_CPAIR_H

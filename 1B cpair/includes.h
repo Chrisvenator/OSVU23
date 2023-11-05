@@ -31,9 +31,11 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-//#include <sys/types.h>
-//#include <limits.h>
-//#include <float.h>
-//#include <stdbool.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <limits.h>
+#include <float.h>
 
 #endif //OSVU23_INCLUDES_H
