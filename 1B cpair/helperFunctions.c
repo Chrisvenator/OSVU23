@@ -157,10 +157,12 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
 //TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
     //Check if we can open stdin
-//    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
+    FILE *input = stdin;
+    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
+        input = fopen("./1B cpair/stdin.txt", "r");
 //        perror("Error opening stdout");
 //        exit(EXIT_FAILURE);
-//    }
+    }
 
     //Allocate memory for 2 points of the points []
     size_t capacity = 2;
@@ -175,7 +177,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t size = 0;
 
     size_t i = 0; //<-- Count how many elements there have been
-    while (getline(&line, &size, stdin) >= 0) {
+    while (getline(&line, &size, input) >= 0) {
         if (strcmp(line, "\n") == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
@@ -363,9 +365,11 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
 }
 
 bool writeToChild(Process process, Point *points, size_t size) {
-    FILE *rightWrite = fdopen(process.pipeWrite, "w");
-    printPointPointer(rightWrite, points, size);
+    FILE *writePipe = fdopen(process.pipeWrite, "w");
+    printPointPointer(writePipe, points, size);
 
+    fflush(writePipe);
+    fclose(writePipe);
     return true;
 }
 

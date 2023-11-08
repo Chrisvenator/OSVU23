@@ -18,7 +18,6 @@ int main(int argc, char *argv[]) {
     size_t myNumberOfElements;
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
-
     Point *points = loadData(ptr_numberOfElements);
     Point *smaller = NULL; //Values smaller than mean
     Point *bigger = NULL; //Values bigger than mean
@@ -27,7 +26,6 @@ int main(int argc, char *argv[]) {
 
     int leftPipe[2];
     int rightPipe[2];
-
 
     //TODO: THIS:
     if (findClosestPair(points, &myNumberOfElements, smaller, bigger, leftPipe, rightPipe) == false) {
@@ -51,7 +49,6 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
 
     // Base cases
     if (numberOfElements <= 1) {
-        free(points);
         return true;
     } else if (numberOfElements == 2) {
         Pair pair;
@@ -61,7 +58,6 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
         pair.p2.y = points[1].y;
 
         printPair(pair);
-        free(points);
         return true;
     }
     // Calculate mean x-coordinate, xm
@@ -96,6 +92,8 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
     smaller = dividePoints(points, 0, index, numberOfElements); //Size of smaller: index
     bigger = dividePoints(points, index, numberOfElements, numberOfElements); //Size of bigger: numberOfElements - index
 
+//    printPointPointer(stdout, smaller, index);
+//    printPointPointer(stdout, bigger, numberOfElements - index);
 
     Process processLeft;
     Process processRight;
@@ -122,8 +120,8 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
             }
             close(processRight.pipeRead);
             close(processRight.pipeWrite);
-            close(processLeft.pipeWrite); //Close left read pipe since we don't need that one
-            //clos all pipes?
+            close(processLeft.pipeWrite);
+            close(processRight.pipeRead);
 
             //communicate with child
             execlp(programName, programName, NULL);
@@ -131,7 +129,6 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
 
             //We shouldn't get here
             fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-            free(points);
             return false;
         default:
             switch (processRight.pid = fork()) {
@@ -145,31 +142,33 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
                     }
                     close(processLeft.pipeRead);
                     close(processLeft.pipeWrite);
-                    close(processRight.pipeWrite); //Close left read pipe since we don't need that one
+                    close(processRight.pipeWrite);
+                    close(processRight.pipeRead);
 
                     //communicate with child
-                    //dup2 (r&w) here
                     execlp(programName, programName, NULL);
 
                     //We shouldn't get here
                     fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-                    free(points);
                     return false;
                 default:
+                    //in Prozesse schreiben (so wie lesen) //TODO: should I use index or index+1?
                     break;
             }
             break;
     }
 
-    //in Prozesse schreiben (so wie lesen) //TODO: check index or index+1
-    if (writeToChild(processLeft, smaller, index) != true) return false;
     if (writeToChild(processRight, bigger, numberOfElements - index) != true) return false;
+    if (writeToChild(processLeft, smaller, index) != true) return false;
+
+
+//    printPointPointer(stdout, smaller, index);
+//    printPointPointer(stdout, bigger, numberOfElements - index);
 
 
     //waitpit
     if (waitForChild(processLeft) == false) return false;
     if (waitForChild(processRight) == false) return false;
-
 
     //prozesse lesen:
     FILE *leftRead = fdopen(processLeft.pipeRead, "r");
@@ -191,8 +190,15 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
     //calculate nearest pair and print it:
     printPair(nearestPair(pair1, pair2, pair3));
 
-    //close pipes
+    //flush
+    fflush(stdout);
+    fflush(leftRead);
+    fflush(rightRead);
 
+
+    //close pipes
+    fclose(leftRead);
+    fclose(rightRead);
 
 //    printPair(calculateNearestPointsBruteForce(points, numberOfElements));
 
