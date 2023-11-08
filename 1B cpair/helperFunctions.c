@@ -4,7 +4,7 @@
 #include "cpair.h"
 
 void usage(void) {
-    fprintf(stderr, "USAGE: %s", programName);
+    fprintf(stderr, "USAGE: %s\n", programName);
     exit(EXIT_FAILURE);
 }
 
@@ -16,6 +16,12 @@ struct Pair {// holds a pair of point and the distance between them
     Point p1; // first point
     Point p2; // second point
     double dist; // distance between p1 and p2
+};
+
+struct Process {
+    int pid;
+    int pipeWrite;
+    int pipeRead;
 };
 
 Pair newPair(Point p1, Point p2) {
@@ -58,7 +64,7 @@ double distance(struct Point p1, struct Point p2) {
     return sqrtf(dx * dx + dy * dy);
 }
 
-double distancePair(Pair pair) {
+double getPairDistance(Pair pair) {
     return distance(pair.p1, pair.p2);
 }
 
@@ -79,7 +85,7 @@ int compareY(const void *a, const void *b) {
     return 0;
 }
 
-double calculateArithmeticMean(Point *points, char coordinate) {
+double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         errno = EINVAL; // Set errno to indicate an invalid argument error.
         fprintf(stderr,
@@ -142,22 +148,18 @@ void printPair(Pair pair) {
     }
 }
 
-void printPointPointer(Point *points, size_t size) {
+void printPointPointer(FILE *file, Point *points, size_t size) {
     for (size_t i = 0; i < size; ++i) {
-        fprintf(stdout, "\n%.3f %.3f", points[i].x, points[i].y);
+        fprintf(file, "%.3f %.3f\n", points[i].x, points[i].y);
     }
 }
 
 //TODO: rewrite:
-Point *loadData() {
-    //TODO: Remove this once stdin is functional
-    FILE *input = stdin;
-//    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) <= 0) {
-//        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
-//        if (input == NULL) {
-//            perror("Error opening file");
-//            exit(EXIT_FAILURE);
-//        }
+Point *loadData(size_t *ptr_numberOfElements) {
+    //Check if we can open stdin
+//    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
+//        perror("Error opening stdout");
+//        exit(EXIT_FAILURE);
 //    }
 
     //Allocate memory for 2 points of the points []
@@ -165,7 +167,6 @@ Point *loadData() {
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
         perror("Failed to allocate memory");
-        fclose(input);
         exit(EXIT_FAILURE);
     }
 
@@ -174,7 +175,7 @@ Point *loadData() {
     size_t size = 0;
 
     size_t i = 0; //<-- Count how many elements there have been
-    while (getline(&line, &size, stdin) >= 0) { //TODO: replace with stdin
+    while (getline(&line, &size, stdin) >= 0) {
         if (strcmp(line, "\n") == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
@@ -182,33 +183,24 @@ Point *loadData() {
             if (temp == NULL) {
                 perror("Failed to reallocate memory");
                 free(points);
-                fclose(input);
                 exit(EXIT_FAILURE);
             }
             points = temp;
         }
 
         points[i] = getCoordinates(line);
-//        printf("Point %zu:\nx:%f\ny:%f\n\n", i, points[i].x, points[i].y);
         i++;
     }
 
-    numberOfElements = i;
-//    printf("Number of elements: %f", numberOfElements);
-
+    *ptr_numberOfElements = i;
 
     free(line); // Free the buffer allocated by getline
-    fclose(input); //TODO: Remove this once stdin is functional
 
-
-
-    //TODO: free points
-//    free(points);
     return points;
 }
 
 
-bool checkIfAllCoordinatesAreTheSame(Point *points) {
+bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         fprintf(stderr,
                 "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
@@ -228,7 +220,7 @@ bool checkIfAllCoordinatesAreTheSame(Point *points) {
     return true; // If we've checked all and none differed, they are all the same
 }
 
-bool checkIfAllXValuesAreTheSame(Point *points) {
+bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         // Handle invalid input
         fprintf(stderr, "Invalid input: points is NULL or numberOfElements is 0.\n");
@@ -269,7 +261,7 @@ size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
 }
 
 
-Point *dividePoints(Point *points, size_t start, size_t end) {
+Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElements) {
     if (points == NULL) {
         fprintf(stderr, "Invalid input in 'dividePoints': points is NULL.\n");
         assert(0);
@@ -335,16 +327,29 @@ Pair newPairFromTwoPairs(Pair p1, Pair p2) {
     Pair pair5 = newPair(p1.p1, p2.p2);
     Pair pair6 = newPair(p1.p2, p2.p1);
 
-    pair3.dist = distancePair(pair3);
-    pair4.dist = distancePair(pair4);
-    pair5.dist = distancePair(pair5);
-    pair6.dist = distancePair(pair6);
+    pair3.dist = getPairDistance(pair3);
+    pair4.dist = getPairDistance(pair4);
+    pair5.dist = getPairDistance(pair5);
+    pair6.dist = getPairDistance(pair6);
 
     Pair nearest = pair3;
     if (pair4.dist < nearest.dist) nearest = pair4;
     if (pair5.dist < nearest.dist) nearest = pair5;
     if (pair6.dist < nearest.dist) nearest = pair6;
 
+
+    return nearest;
+}
+
+Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
+    Pair pair3 = newPair(p1.p1, p);
+    Pair pair4 = newPair(p1.p2, p);
+
+    pair3.dist = getPairDistance(pair3);
+    pair4.dist = getPairDistance(pair4);
+
+    Pair nearest = pair3;
+    if (pair4.dist < nearest.dist) nearest = pair4;
 
     return nearest;
 }
@@ -357,70 +362,49 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
     return nearest;
 }
 
+bool writeToChild(Process process, Point *points, size_t size) {
+    FILE *rightWrite = fdopen(process.pipeWrite, "w");
+    printPointPointer(rightWrite, points, size);
 
-/*
- * pid_t leftChild, rightChild;
-    switch (leftChild = fork()) {
-        case -1:
-            fprintf(stderr, "Cannot fork!\n");
-            close(leftPipe[0]);
-            close(leftPipe[1]);
-            close(rightPipe[0]);
-            close(rightPipe[1]);
-            exit(EXIT_FAILURE);
-        case 0: //Child Element:
-            if (dup2(leftPipe[1], STDOUT_FILENO) == -1 ||
-                dup2(leftPipe[0], STDIN_FILENO) == -1) { //TODO: stimmt das?
-                fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n",
-                        programName, strerror(errno));
-                free(points);
-                exit(EXIT_FAILURE);
-            }
-            close(rightPipe[0]);
-            close(rightPipe[1]);
-            close(leftPipe[1]); //Close left read pipe since we don't need that one
+    return true;
+}
 
-            execlp(programName, programName, NULL);
+bool waitForChild(Process process) {
+    int status;
+    waitpid(process.pid, &status, 0);
 
-            //We shouldn't get here
-            fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-            free(points);
-            assert(1);
-            exit(EXIT_FAILURE);
-        default:
-            switch (rightChild = fork()) {
-                case -1:
-                    fprintf(stderr, "Cannot fork!\n");
-                    close(leftPipe[0]);
-                    close(leftPipe[1]);
-                    close(rightPipe[0]);
-                    close(rightPipe[1]);
-                    exit(EXIT_FAILURE);
-                case 0: //Child Element:
-                    if (dup2(rightPipe[1], STDOUT_FILENO) == -1 ||
-                        dup2(rightPipe[0], STDIN_FILENO) == -1) { //TODO: stimmt das?
-                        fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n",
-                                programName, strerror(errno));
-                        free(points);
-                        exit(EXIT_FAILURE);
-                    }
-                    close(leftPipe[0]);
-                    close(leftPipe[1]);
-                    close(rightPipe[1]); //Close left read pipe since we don't need that one
-
-                    execlp(programName, programName, NULL);
-
-                    //We shouldn't get here
-                    fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-                    free(points);
-                    assert(1);
-                    exit(EXIT_FAILURE);
-                default:
-                    writeToParent();
-                    readFromChild();
-                    computeClosestPair();
-                    break;
-            }
-            break;
+    if (WEXITSTATUS(status) == 0) {
+        return true;
+    } else {
+        return false;
     }
- */
+}
+
+Pair readPair(int capacity, FILE *file) {
+    Pair pair;
+
+    char *line = NULL;
+    size_t size = 0;
+
+    int i = 0; //<-- Count how many elements there have been
+    while (getline(&line, &size, file) >= 0) { //TODO: replace with stdin
+        if (strcmp(line, "\n") == 0) continue;
+        if (i == 0) pair.p1 = getCoordinates(line);
+        if (i == 1) pair.p2 = getCoordinates(line);
+        i++;
+    }
+
+
+    //TODO: remove after testing!
+    if (i == 0) assert(1);
+    if (i == 1) {
+        Point invalid_Point;
+        invalid_Point.x = FLT_MAX;
+        invalid_Point.y = FLT_MAX;
+
+        pair.p1 = invalid_Point;
+        pair.p2 = invalid_Point;
+    }
+
+    return pair;
+}

@@ -24,7 +24,7 @@ char *programName;
 /**
  * @brief Number of all Point elements
  */
-size_t numberOfElements;
+//size_t numberOfElements;
 
 /**
  * @brief Structure to represent a point in 2D space.
@@ -38,6 +38,9 @@ size_t numberOfElements;
  * space by adding more members, such as 'z' for a three-dimensional space.
  */
 typedef struct Point Point;
+
+//TODO: comment
+typedef struct Process Process;
 
 /**
  * @brief Structure to represent a pair of points and the distance between them.
@@ -77,7 +80,7 @@ double distance(struct Point p1, struct Point p2);
 /**
  * same as distance
  */
-double distancePair(Pair pair);
+double getPairDistance(Pair pair);
 
 /**
  * @brief Prints the usage information for the program and exits.
@@ -155,7 +158,7 @@ void printPair(Pair pair);
  * @param coordinate A char indicating which coordinate to calculate the mean of ('x' or 'y').
  * @return The arithmetic mean as a double value, or 0 if an input error is detected.
  */
-double calculateArithmeticMean(Point *points, char coordinate);
+double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements);
 
 
 /**
@@ -166,7 +169,7 @@ double calculateArithmeticMean(Point *points, char coordinate);
  * @param numberOfElements The number of elements in the points array.
  * @return A boolean value indicating whether all coordinates are the same (true) or not (false).
  */
-bool checkIfAllCoordinatesAreTheSame(Point *points);
+bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements);
 
 
 /**
@@ -180,7 +183,7 @@ bool checkIfAllCoordinatesAreTheSame(Point *points);
  * @param points A pointer to the first element of an array of Point structures.
  * @return Returns true if all points in the array have the same x-coordinate, false otherwise.
  */
-bool checkIfAllXValuesAreTheSame(Point *points);
+bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements);
 
 
 /**
@@ -231,7 +234,7 @@ int compareY(const void *a, const void *b);
  * @param end The ending index (exclusive) for the division.
  * @return A pointer to of all elements from points from start to end
  */
-Point *dividePoints(Point *points, size_t start, size_t end);
+Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElements);
 
 /**
  * @brief Gets the index of the first point whose coordinate is greater than or equal to the mean.
@@ -248,9 +251,7 @@ Point *dividePoints(Point *points, size_t start, size_t end);
 size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 
 
-void findClosestPair(Point *points, size_t n);
-
-void executeChild(Point *points, size_t size);
+bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger, int leftPipe[2], int rightPipe[2]);
 
 Pair calculateNearestPointsBruteForce(Point *points, size_t size);
 
@@ -259,5 +260,10 @@ Pair newPairFromTwoPairs(Pair p1, Pair p2);
 Pair nearestPair(Pair p1, Pair p2, Pair p3);
 
 Pair newPair(Point p1, Point p2);
+
+bool writeToChild(Process process, Point *points, size_t size);
+
+bool waitForChild(Process process);
+
 
 #endif //OSVU23_CPAIR_H
