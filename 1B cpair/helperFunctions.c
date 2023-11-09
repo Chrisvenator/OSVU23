@@ -197,13 +197,7 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
 
 //TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
-    //Check if we can open stdin
-//    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
-//        perror("Error opening stdout");
-//        exit(EXIT_FAILURE);
-//    }
 
-    //Allocate memory for 2 points of the points []
     size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
@@ -211,13 +205,11 @@ Point *loadData(size_t *ptr_numberOfElements) {
         exit(EXIT_FAILURE);
     }
 
-
     char *line = NULL;
     size_t size = 0;
-
     size_t i = 0; //<-- Count how many elements there have been
+
     while (getline(&line, &size, stdin) >= 0) {
-        if (strcmp(line, "\n") == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
             Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
@@ -228,15 +220,12 @@ Point *loadData(size_t *ptr_numberOfElements) {
             }
             points = temp;
         }
-
-        points[i] = getCoordinates(line);
+        points[i] = strtop(line);
         i++;
     }
 
     *ptr_numberOfElements = i;
-
     free(line); // Free the buffer allocated by getline
-
     return points;
 }
 
