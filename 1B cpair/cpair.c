@@ -33,12 +33,8 @@ int main(int argc, char *argv[]) {
     if (findClosestPair(points, &myNumberOfElements, leftPipe, rightPipe) == false) {
         exit(EXIT_FAILURE);
     }
-    if (close(leftPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(leftPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(rightPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(rightPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
-
-    free(points);
+//
+//    free(points);
 
     exit(EXIT_SUCCESS);
 }
@@ -56,12 +52,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             return true;
             break;
         case 2: {
-            struct Pair pair;
-            pair.p1.x = points[0].x;
-            pair.p1.y = points[0].y;
-            pair.p2.x = points[1].x;
-            pair.p2.y = points[1].y;
-            printPair(pair);
+            printPointToFile(stdout, points[0]);
+            printPointToFile(stdout, points[1]);
             free(points);
             return true;
             break;
@@ -81,7 +73,6 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         return false;
     }
 
-
     switch (processLeft.pid = fork()) {
         case -1:
             fprintf(stderr, "Cannot fork!\n");
@@ -98,8 +89,6 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
             execlp(programName, programName, NULL);
 
-
-            //We shouldn't get here
             fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
             free(points);
             return false;
@@ -132,6 +121,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     // TODO: close unused pipe ends by parent process
     // TODO: add leftWrite and rightWrite
+    FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
+    FILE *rightWrite = fdopen(processRight.writePipe[1], "w");
 
     FILE *leftRead = fdopen(processLeft.readPipe[0], "r");
     FILE *rightRead = fdopen(processRight.readPipe[0], "r");
@@ -145,23 +136,29 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     for (int i = 0; i < numberOfElements; ++i) {
         if (points[i].x <= mean) {
-            printPointToFile(leftRead, points[i]);
+            printPointToFile(leftWrite, points[i]);
         }
         else {
-            printPointToFile(rightRead, points[i]);
+            printPointToFile(rightWrite, points[i]);
         }
     }
 
+    fflush(leftWrite);
+    fflush(rightWrite);
+    fclose(leftWrite);
+    fclose(rightWrite);
 
+    int status;
+    waitpid(processLeft.pid, &status, 0);
+    waitpid(processRight.pid, &status, 0);
 
+    if (status != EXIT_SUCCESS) {
+        return false;
+    }
 
-
-
-
-    //TODO: Fix if no value is present
-    //mit getLine lesen und parsen. Es sind IMMER 2 Punkte vorhanden
-    Pair pair1 = readPair(2, leftRead);
-    Pair pair2 = readPair(2, rightRead);
+    Pair left, right;
+    size_t leftReadAmount = readPair(leftRead, left);
+    size_t rightReadAmount = readPair(rightRead, right);
     Pair pair3;
 
      // What?
@@ -173,7 +170,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
 
     //calculate nearest pair and print it:
-    printPair(nearestPair(pair1, pair2, pair3));
+    printPair(left);
+    printPair(right);
 
     //close pipes
 

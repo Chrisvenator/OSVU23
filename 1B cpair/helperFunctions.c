@@ -43,6 +43,33 @@ Pair newPair(Point p1, Point p2) {
     return p;
 }
 
+Point strtop(char *input) {
+    Point p;
+
+    char *x_str = strtok(input, " ");
+    char *y_str = strtok(NULL, "\n");
+
+    if (x_str == NULL || y_str == NULL) {
+        fprintf(stderr, "Malformed input line\n");
+    }
+
+    char *endptr_x;
+    p.x = strtof(x_str, &endptr_x);
+
+    char *endptr_y;
+    p.y = strtof(y_str, &endptr_y);
+
+    if (*endptr_x != '\0') {
+        fprintf(stderr, "Malformed input line\n");
+    }
+
+    if (*endptr_y != '\0') {
+        fprintf(stderr, "Malformed input line\n");
+    }
+
+    return p;
+}
+
 int is_float(char *str) {
     char *endptr;
     errno = 0;  // To distinguish success/failure after the call to strtod
@@ -395,31 +422,24 @@ bool waitForChild(Process process) {
     }
 }
 
-Pair readPair(int capacity, FILE *file) {
-    Pair pair;
+size_t readPair(FILE *file, Pair pair) {
 
-    char *line = NULL;
+    size_t stored = 0;
     size_t size = 0;
+    char *line = NULL;
 
-    int i = 0; //<-- Count how many elements there have been
-    while (getline(&line, &size, file) >= 0) { //TODO: replace with stdin
-        if (strcmp(line, "\n") == 0) continue;
-        if (i == 0) pair.p1 = getCoordinates(line);
-        if (i == 1) pair.p2 = getCoordinates(line);
-        i++;
+    if((getline(&line, &size, file)) != -1) {
+        return -1;
     }
+    pair.p1 = strtop(line);
+    stored++;
 
-
-    //TODO: remove after testing!
-    if (i == 0) assert(1);
-    if (i == 1) {
-        Point invalid_Point;
-        invalid_Point.x = FLT_MAX;
-        invalid_Point.y = FLT_MAX;
-
-        pair.p1 = invalid_Point;
-        pair.p2 = invalid_Point;
+    if((getline(&line, &size, file)) != -1) {
+        return -1;
     }
+    pair.p2 = strtop(line);
+    stored++;
 
-    return pair;
+    free(line);
+    return stored;
 }
