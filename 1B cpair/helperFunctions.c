@@ -147,6 +147,7 @@ Point getCoordinates(char *string) {
     float x;
     float y;
 
+//    fprintf(stderr, "Input string: %s", string);
     for (int i = 0; i < strlen(string); ++i) if (string[i] == ' ') amountOfSpaces++;
     if (string == NULL || amountOfSpaces != 1) {
         fprintf(stderr, "[%s] ERROR: There must only be 2 coordinates. Not more, not less!\n", programName);
@@ -246,7 +247,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t i = 0; //<-- Count how many elements there have been
 
     while (getline(&line, &size, stdin) >= 0) {
-        if (strcmp(line, "\n") == 0) continue;
+        if (strcmp(line, "\n") == 0) continue; //TODO: strncmp
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
             Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
@@ -257,7 +258,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
             }
             points = temp;
         }
-        points[i] = strtop(line);
+        points[i] = getCoordinates(line);
         i++;
     }
 
@@ -358,38 +359,6 @@ Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElem
     return newPoints;
 }
 
-//A Methode to test if the program works.
-Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
-    if (size < 2) {
-        fprintf(stderr,
-                "[%s] ERROR: the size to calculate the nearest distance must be bigger or equals than 2. Size: %zu",
-                programName, size);
-        assert(1);
-    } else if (points == NULL) {
-        fprintf(stderr, "Invalid input in 'getIndexOfMean': points is NULL.\n");
-        assert(1);
-    }
-
-    Pair p;
-    p.p1 = points[0];
-    p.p2 = points[1];
-    p.dist = distance(p.p1, p.p2);
-    if (size == 2) return p;
-
-
-    for (size_t i = 0; i < size; ++i) {
-        for (size_t j = i + 1; j < size; ++j) {
-            double dist = distance(points[i], points[j]);
-            if (dist < p.dist) {
-                p.p1 = points[i];
-                p.p2 = points[j];
-                p.dist = dist;
-            }
-        }
-    }
-    return p;
-}
-
 Pair newPairFromTwoPairs(Pair p1, Pair p2) {
     Pair pair3 = newPair(p1.p1, p2.p1);
     Pair pair4 = newPair(p1.p2, p2.p2);
@@ -411,6 +380,7 @@ Pair newPairFromTwoPairs(Pair p1, Pair p2) {
 }
 
 Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
+    fprintf(stderr, "Point: %f %f\n", p.x, p.y);
     Pair pair3 = newPair(p1.p1, p);
     Pair pair4 = newPair(p1.p2, p);
 
@@ -451,23 +421,26 @@ bool waitForChild(Process process) {
 }
 
 // TODO: rewrite this cause i copied it from my codebase
-size_t readPair(FILE *file, Pair pair) {
-
-    size_t stored = 0;
+ssize_t readPair(FILE *file, Pair *pair) {
+    ssize_t stored = 0;
     size_t size = 0;
     char *line = NULL;
 
-    if((getline(&line, &size, file)) != -1) {
+    if ((getline(&line, &size, file)) == -1) {
+        fprintf(stderr, "ONLY ZERO LINE!\n");
         return -1;
     }
-    pair.p1 = strtop(line);
+    pair->p1 = getCoordinates(line);
     stored++;
 
-    if((getline(&line, &size, file)) != -1) {
+    if ((getline(&line, &size, file)) == -1) {
+        fprintf(stderr, "ONLY ONE LINE!\n");
         return -1;
     }
-    pair.p2 = strtop(line);
+    pair->p2 = getCoordinates(line);
     stored++;
+
+    pair->dist = distance(pair->p1, pair->p2);
 
     free(line);
     return stored;
