@@ -1,8 +1,3 @@
-//
-// Created by junioradmin on 03.11.23.
-//
-#include "cpair.h"
-
 void usage(void) {
     fprintf(stderr, "USAGE: %s\n", programName);
     exit(EXIT_FAILURE);
@@ -19,10 +14,25 @@ struct Pair {// holds a pair of point and the distance between them
 };
 
 struct Process {
-    int pid;
-    int pipeWrite;
-    int pipeRead;
+    pid_t pid;       // Process ID
+    int readPipe[2]; // Read pipe (file descriptors)
+    int writePipe[2]; // Write pipe (file descriptors)
 };
+
+// Function to initialize a Process struct
+void initProcess(struct Process *process) {
+    process->pid = -1; // Initialize PID to an invalid value
+    pipe(process->readPipe);  // Create the read pipe
+    pipe(process->writePipe); // Create the write pipe
+}
+
+// Function to clean up and close pipes for a Process struct
+void cleanupProcess(struct Process *process) {
+    close(process->readPipe[0]);  // Close read pipe input
+    close(process->readPipe[1]);  // Close read pipe output
+    close(process->writePipe[0]); // Close write pipe input
+    close(process->writePipe[1]); // Close write pipe output
+}
 
 Pair newPair(Point p1, Point p2) {
     Pair p;
@@ -146,6 +156,10 @@ void printPair(Pair pair) {
     } else {
         fprintf(stdout, "%.3f %.3f\n%.3f %.3f\n", pair.p2.x, pair.p2.y, pair.p1.x, pair.p1.y);
     }
+}
+
+void printPointToFile(FILE *file, Point p) {
+    fprintf(file, "%.3f %.3f\n", p.x, p.y);
 }
 
 void printPointPointer(FILE *file, Point *points, size_t size) {
@@ -363,7 +377,8 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
 }
 
 bool writeToChild(Process process, Point *points, size_t size) {
-    FILE *rightWrite = fdopen(process.pipeWrite, "w");
+    // TODO : 1 is a placeholder
+    FILE *rightWrite = fdopen(process.writePipe[1], "w");
     printPointPointer(rightWrite, points, size);
 
     return true;
