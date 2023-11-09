@@ -19,6 +19,9 @@ int main(int argc, char *argv[]) {
 
     Point *points = loadData(ptr_numberOfElements);
 
+    for (int i = 0; i < 2; ++i) {
+        printPointToFile(stderr, &points[i]);
+    }
     fprintf(stderr, "%zu\n", *ptr_numberOfElements);
 
     for (int i = 0; i < myNumberOfElements; i++) {
@@ -131,6 +134,11 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     FILE *leftRead = fdopen(processLeft.readPipe[0], "r");
     FILE *rightRead = fdopen(processRight.readPipe[0], "r");
+
+    checkFile(leftWrite, "Error opening leftWrite");
+    checkFile(rightWrite, "Error opening rightWrite");
+    checkFile(leftRead, "Error opening leftRead");
+    checkFile(rightRead, "Error opening rightRead");
 
     float mean;
     float sum = 0;

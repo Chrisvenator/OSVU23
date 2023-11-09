@@ -435,3 +435,10 @@ size_t readPair(FILE *file, Pair pair) {
     free(line);
     return stored;
 }
+
+void checkFile(FILE *file, const char *description) {
+    if (file == NULL) {
+        perror(description);  // Print error message
+        exit(EXIT_FAILURE);   // Terminate the program
+    }
+}
