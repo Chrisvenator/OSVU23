@@ -1,7 +1,6 @@
 #include "cpair.h"
 #include "helperFunctions.c" //TODO: ABSOLUTELY REMOVE THIS LINE!!!!!!
 
-
 /**
  * @brief
  * @details
@@ -10,206 +9,191 @@
  * @param argc
  * @param argv
  * @return
- * @author Christopher Scherling 12119060
+ * @author Christopher Scherling 12119060 :)
  */
 int main(int argc, char *argv[]) {
     programName = argv[0];
     if (argc != 1) usage(); //If the wrong number of arguments have been passed, throw an error
+
     size_t myNumberOfElements;
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
-    Point *smaller = NULL; //Values smaller than mean
-    Point *bigger = NULL; //Values bigger than mean
+    fprintf(stderr, "\n");
 
-//    printf("%zu Number of elements: %zu", numberOfElements, *ptr_numberOfElements);
 
-//    int leftPipe[2];
-//    int rightPipe[2];
+    for (int i = 0; i < 2; ++i) {
+        printPointToFile(stderr, &points[i]);
+    }
+
+    fprintf(stderr, "\n%zu\n", *ptr_numberOfElements);
+
+    for (int i = 0; i < myNumberOfElements; i++) {
+        printf("%f %f\n", points[i].x, points[i].y);
+    }
+    printf("===========================\n");
+
+    int leftPipe[2];
+    int rightPipe[2];
+
 
     //TODO: THIS:
-    if (findClosestPair(points, &myNumberOfElements, smaller, bigger) == false) {
-        assert(1);
+    if (findClosestPair(points, &myNumberOfElements, leftPipe, rightPipe) == false) {
+        printf("failed\n");
+        exit(EXIT_FAILURE);
     }
-//    if (close(leftPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-//    if (close(leftPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
-//    if (close(rightPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-//    if (close(rightPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
-
-    free(points);
-    free(smaller);
-    free(bigger);
-
 
     exit(EXIT_SUCCESS);
 }
 
-bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger) {
+bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightPipe[2]) {
     size_t numberOfElements = *n;
 
-    // Base cases
-    if (numberOfElements <= 1) {
-        return true;
-    } else if (numberOfElements == 2) {
-        Pair pair;
-        pair.p1.x = points[0].x;
-        pair.p1.y = points[0].y;
-        pair.p2.x = points[1].x;
-        pair.p2.y = points[1].y;
-
-        printPair(pair);
-        return true;
-    }
-    // Calculate mean x-coordinate, xm
-
-    double mean;
-    size_t index;
-
-    if (checkIfAllCoordinatesAreTheSame(points, numberOfElements) == true) {
-        Point p0 = points[0];
-        Pair p;
-        p.p1 = p0;
-        p.p2 = p0;
-        printPair(p);
-        return true;
-    } else if (checkIfAllXValuesAreTheSame(points, numberOfElements) == true) {
-        mean = calculateArithmeticMean(points, 'y', numberOfElements);
-        qsort(points, (size_t) numberOfElements, sizeof(Point), compareY);
-        index = getIndexOfMean(points, mean, numberOfElements, 'y');
-    } else {
-        mean = calculateArithmeticMean(points, 'x', numberOfElements);
-        qsort(points, (size_t) numberOfElements, sizeof(Point), compareX);
-        index = getIndexOfMean(points, mean, numberOfElements, 'x');
+    switch (numberOfElements) {
+        case 0:
+            free(points);
+            return false;
+            break;
+        case 1:
+            free(points);
+            return true;
+            break;
+        case 2: {
+            printPointToFile(stdout, &points[0]);
+            printPointToFile(stdout, &points[1]);
+            free(points);
+            return true;
+            break;
+        }
+        default:
+            break;
     }
 
-    // /////////////////////// //
-    // Divide points around xm //
-    // /////////////////////// //
+    struct Process processLeft;
+    struct Process processRight;
+    initProcess(&processLeft);
+    initProcess(&processRight);
 
-    //Check if the index, where the mean is located, is an odd number. If yes, we need to include the mean as well or else it will be cut out
-    index = index % 2 == 0 ? index : index + 1;
+    //TODO: add checks for cases when pipes failed to open
 
-    smaller = dividePoints(points, 0, index, numberOfElements); //Size of smaller: index
-    bigger = dividePoints(points, index, numberOfElements, numberOfElements); //Size of bigger: numberOfElements - index
-
-//    printPointPointer(stdout, smaller, index);
-//    printPointPointer(stdout, bigger, numberOfElements - index);
-
-    Process processLeft;
-    Process processRight;
-
-    if (pipe(processLeft.pipeRead) == -1 || pipe(processLeft.pipeWrite) == -1 ||
-        pipe(processRight.pipeRead) == -1 || pipe(processRight.pipeWrite) == -1) {
+    if (pipe(leftPipe) == -1 || pipe(rightPipe) == -1) {
         fprintf(stderr, "[%s] Error creating pipe!", programName);
         return false;
     }
-
 
     switch (processLeft.pid = fork()) {
         case -1:
             fprintf(stderr, "Cannot fork!\n");
             return false;
+            break;
         case 0: //We are now in the first child element
-            if (dup2(processLeft.pipeWrite[1], STDOUT_FILENO) == -1 || dup2(processLeft.pipeRead[0], STDIN_FILENO) == -1) {
+            if (dup2(processLeft.readPipe[1], STDOUT_FILENO) == -1 ||
+                dup2(processLeft.writePipe[0], STDIN_FILENO) == -1) {
+
                 fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                 return false;
             }
-            close(processLeft.pipeRead[1]);
-            close(processLeft.pipeWrite[0]);
-            close(processRight.pipeRead[0]);
-            close(processRight.pipeWrite[0]);
-            close(processRight.pipeRead[1]);
-            close(processRight.pipeWrite[1]);
+            cleanupProcess(&processLeft);
+            cleanupProcess(&processRight);
 
-            sleep(1);
-
-            //communicate with child
             execlp(programName, programName, NULL);
 
-            //We shouldn't get here
             fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
+            free(points);
             return false;
+            break;
         default:
-            switch (processRight.pid = fork()) {
-                case -1:
-                    fprintf(stderr, "[%s]Cannot fork!", programName);
-                    return false;
-                case 0:
-                    if (dup2(processRight.pipeWrite[1], STDOUT_FILENO) == -1 || dup2(processRight.pipeRead[0], STDIN_FILENO) == -1) {
-                        fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
-                        return false;
-                    }
-                    close(processRight.pipeRead[1]);
-                    close(processRight.pipeWrite[0]);
-                    close(processLeft.pipeRead[0]);
-                    close(processLeft.pipeWrite[0]);
-                    close(processLeft.pipeRead[1]);
-                    close(processLeft.pipeWrite[1]);
-
-                    sleep(1);
-
-                    //communicate with child
-                    execlp(programName, programName, NULL);
-
-                    //We shouldn't get here
-                    fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-                    return false;
-                default:
-                    //in Prozesse schreiben (so wie lesen) //TODO: should I use index or index+1?
-                    break;
-            }
             break;
     }
 
-    if (writeToChild(processRight, bigger, numberOfElements - index) != true) return false;
-    if (writeToChild(processLeft, smaller, index) != true) return false;
+    switch (processRight.pid = fork()) {
+        case -1:
+            fprintf(stderr, "Cannot fork!\n");
+            return false;
+            break;
+        case 0: //We are now in the first child element
+            if (dup2(processRight.readPipe[1], STDOUT_FILENO) == -1 ||
+                dup2(processRight.writePipe[0], STDIN_FILENO) == -1) {
+
+                fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
+                return false;
+            }
+            cleanupProcess(&processLeft);
+            cleanupProcess(&processRight);
+
+            execlp(programName, programName, NULL);
+
+            fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
+            free(points);
+            return false;
+            break;
+        default:
+            break;
+    }
+
+    // TODO: close unused pipe ends by parent process
+    FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
+    FILE *rightWrite = fdopen(processRight.writePipe[1], "w");
+
+    FILE *leftRead = fdopen(processLeft.readPipe[0], "r");
+    FILE *rightRead = fdopen(processRight.readPipe[0], "r");
+
+    checkFile(leftWrite, "Error opening leftWrite");
+    checkFile(rightWrite, "Error opening rightWrite");
+    checkFile(leftRead, "Error opening leftRead");
+    checkFile(rightRead, "Error opening rightRead");
+
+    float mean;
+    float sum = 0;
+    for (int i = 0; i < numberOfElements; ++i) {
+        sum += points[i].x;
+    }
+    mean = sum / (float) numberOfElements;
+    fprintf(stderr, "mean: %f\n", mean);
+
+    for (int i = 0; i < numberOfElements; ++i) {
+        if (points[i].x <= mean) {
+            printPointToFile(leftWrite, &points[i]);
+        }
+    }
+
+    for (int i = 0; i < numberOfElements; ++i) {
+        fprintf(stderr, "prep: \n");
+
+        if (points[i].x > mean) {
+            fprintf(stderr, "sex.com: \n");
+            printPointToFile(rightWrite, &points[i]);
+            // TODO: continue debugging from here
+            printPointToFile(stdout, &points[i]);
+        }
+    }
 
 
-//    printPointPointer(stdout, smaller, index);
-//    printPointPointer(stdout, bigger, numberOfElements - index);
 
+    fflush(leftWrite);
+    fflush(rightWrite);
+    fclose(leftWrite);
+    fclose(rightWrite);
 
-    //waitpit
-    if (waitForChild(processLeft) == false) return false;
-    if (waitForChild(processRight) == false) return false;
+    int status;
+    waitpid(processLeft.pid, &status, 0);
+    waitpid(processRight.pid, &status, 0);
 
-    //prozesse lesen:
-    FILE *leftRead = fdopen(processLeft.pipeRead[0], "r");
-    FILE *rightRead = fdopen(processRight.pipeRead[0], "r");
+    if (status != EXIT_SUCCESS) {
+        printf("dead child\n");
+        return false;
+    }
 
-    close(processLeft.pipeRead[0]);
-    close(processLeft.pipeWrite[1]);
-    close(processRight.pipeRead[0]);
-    close(processRight.pipeWrite[1]);
-
-    //TODO: Fix if no value is present
-    //mit getLine lesen und parsen. Es sind IMMER 2 Punkte vorhanden
-    Pair pair1 = readPair(2, leftRead);
-    Pair pair2 = readPair(2, rightRead);
+    Pair left, right;
+    size_t leftReadAmount = readPair(leftRead, left);
+    size_t rightReadAmount = readPair(rightRead, right);
     Pair pair3;
 
-    //check if no value has been returned. <--
-    if (pair1.p1.x != FLT_MAX && pair2.p1.x != FLT_MAX) pair3 = newPairFromTwoPairs(pair1, pair2);
-    if (pair1.p1.x == FLT_MAX && pair2.p1.x == FLT_MAX) pair3 = newPair(smaller[0], bigger[0]);
-    if (pair1.p1.x == FLT_MAX) pair3 = newPairFromOnePairAndOnePoint(pair2, smaller[0]);
-    if (pair2.p1.x == FLT_MAX) pair3 = newPairFromOnePairAndOnePoint(pair1, bigger[0]);
+    printf("goofy\n");
+    printf("%zu %zu\n", leftReadAmount, rightReadAmount);
 
-
-    //calculate nearest pair and print it:
-    printPair(nearestPair(pair1, pair2, pair3));
-
-    //flush
-    fflush(stdout);
-    fflush(leftRead);
-    fflush(rightRead);
-
-
-    //close pipes
-    fclose(leftRead);
-    fclose(rightRead);
-
-//    printPair(calculateNearestPointsBruteForce(points, numberOfElements));
-
+    printPair(left);
+    printPair(right);
 
     //TODO: Close all pipes all the time!
     //TODO: keine exit() beutzen. Nur in main(); Sonst is es sehr einfach zu vergessen die pipes zu schlißen
@@ -217,5 +201,3 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
 
     return true;
 }
-
-
