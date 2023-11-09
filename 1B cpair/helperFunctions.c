@@ -20,8 +20,8 @@ struct Pair {// holds a pair of point and the distance between them
 
 struct Process {
     int pid;
-    int pipeWrite;
-    int pipeRead;
+    int pipeWrite[2];
+    int pipeRead[2];
 };
 
 Pair newPair(Point p1, Point p2) {
@@ -158,6 +158,7 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
 Point *loadData(size_t *ptr_numberOfElements) {
     //Check if we can open stdin
     FILE *input = stdin;
+
     if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
         input = fopen("./1B cpair/stdin.txt", "r");
 //        perror("Error opening stdout");
@@ -190,6 +191,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
             points = temp;
         }
 
+        fprintf(stdout, "Input line: %s", line);
         points[i] = getCoordinates(line);
         i++;
     }

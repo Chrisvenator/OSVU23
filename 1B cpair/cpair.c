@@ -24,17 +24,17 @@ int main(int argc, char *argv[]) {
 
 //    printf("%zu Number of elements: %zu", numberOfElements, *ptr_numberOfElements);
 
-    int leftPipe[2];
-    int rightPipe[2];
+//    int leftPipe[2];
+//    int rightPipe[2];
 
     //TODO: THIS:
-    if (findClosestPair(points, &myNumberOfElements, smaller, bigger, leftPipe, rightPipe) == false) {
+    if (findClosestPair(points, &myNumberOfElements, smaller, bigger) == false) {
         assert(1);
     }
-    if (close(leftPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(leftPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(rightPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
-    if (close(rightPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
+//    if (close(leftPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
+//    if (close(leftPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
+//    if (close(rightPipe[0]) != 0) fprintf(stderr, "Error closing pipes!\n");
+//    if (close(rightPipe[1]) != 0) fprintf(stderr, "Error closing pipes!\n");
 
     free(points);
     free(smaller);
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger, int leftPipe[2], int rightPipe[2]) {
+bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger) {
     size_t numberOfElements = *n;
 
     // Base cases
@@ -98,34 +98,33 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
     Process processLeft;
     Process processRight;
 
-
-    if (pipe(leftPipe) == -1 || pipe(rightPipe) == -1) {
+    if (pipe(processLeft.pipeRead) == -1 || pipe(processLeft.pipeWrite) == -1 ||
+        pipe(processRight.pipeRead) == -1 || pipe(processRight.pipeWrite) == -1) {
         fprintf(stderr, "[%s] Error creating pipe!", programName);
         return false;
     }
 
-    processLeft.pipeRead = leftPipe[0];
-    processLeft.pipeWrite = leftPipe[1];
-    processRight.pipeRead = rightPipe[0];
-    processRight.pipeWrite = rightPipe[1];
 
     switch (processLeft.pid = fork()) {
         case -1:
             fprintf(stderr, "Cannot fork!\n");
             return false;
         case 0: //We are now in the first child element
-            if (dup2(processLeft.pipeWrite, STDOUT_FILENO) == -1 || dup2(processLeft.pipeRead, STDIN_FILENO) == -1) {
+            if (dup2(processLeft.pipeWrite[1], STDOUT_FILENO) == -1 || dup2(processLeft.pipeRead[0], STDIN_FILENO) == -1) {
                 fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                 return false;
             }
-            close(processRight.pipeRead);
-            close(processRight.pipeWrite);
-            close(processLeft.pipeWrite);
-            close(processRight.pipeRead);
+            close(processLeft.pipeRead[1]);
+            close(processLeft.pipeWrite[0]);
+            close(processRight.pipeRead[0]);
+            close(processRight.pipeWrite[0]);
+            close(processRight.pipeRead[1]);
+            close(processRight.pipeWrite[1]);
+
+            sleep(1);
 
             //communicate with child
             execlp(programName, programName, NULL);
-
 
             //We shouldn't get here
             fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
@@ -136,14 +135,18 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
                     fprintf(stderr, "[%s]Cannot fork!", programName);
                     return false;
                 case 0:
-                    if (dup2(processRight.pipeWrite, STDOUT_FILENO) == -1 || dup2(processRight.pipeRead, STDIN_FILENO) == -1) {
+                    if (dup2(processRight.pipeWrite[1], STDOUT_FILENO) == -1 || dup2(processRight.pipeRead[0], STDIN_FILENO) == -1) {
                         fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                         return false;
                     }
-                    close(processLeft.pipeRead);
-                    close(processLeft.pipeWrite);
-                    close(processRight.pipeWrite);
-                    close(processRight.pipeRead);
+                    close(processRight.pipeRead[1]);
+                    close(processRight.pipeWrite[0]);
+                    close(processLeft.pipeRead[0]);
+                    close(processLeft.pipeWrite[0]);
+                    close(processLeft.pipeRead[1]);
+                    close(processLeft.pipeWrite[1]);
+
+                    sleep(1);
 
                     //communicate with child
                     execlp(programName, programName, NULL);
@@ -171,8 +174,13 @@ bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigg
     if (waitForChild(processRight) == false) return false;
 
     //prozesse lesen:
-    FILE *leftRead = fdopen(processLeft.pipeRead, "r");
-    FILE *rightRead = fdopen(processRight.pipeRead, "r");
+    FILE *leftRead = fdopen(processLeft.pipeRead[0], "r");
+    FILE *rightRead = fdopen(processRight.pipeRead[0], "r");
+
+    close(processLeft.pipeRead[0]);
+    close(processLeft.pipeWrite[1]);
+    close(processRight.pipeRead[0]);
+    close(processRight.pipeWrite[1]);
 
     //TODO: Fix if no value is present
     //mit getLine lesen und parsen. Es sind IMMER 2 Punkte vorhanden
