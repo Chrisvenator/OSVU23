@@ -142,10 +142,10 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     for (int i = 0; i < numberOfElements; ++i) {
         if (points[i].x <= mean) {
             printPointToFile(leftWrite, &points[i]);
-
         }
         else {
             printPointToFile(rightWrite, &points[i]);
+            // TODO: continue debugging from here
             printPointToFile(stdout, &points[i]);
         }
     }
