@@ -54,8 +54,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             return true;
             break;
         case 2: {
-            printPointToFile(stdout, &points[0]);
-            printPointToFile(stdout, &points[1]);
+            Pair p = newPair(points[0], points[1]);
+            printPair(p);
             free(points);
             return true;
             break;
@@ -72,7 +72,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     //TODO: add checks for cases when pipes failed to open
 
     if (pipe(leftPipe) == -1 || pipe(rightPipe) == -1) {
-        fprintf(stderr, "[%s] Error creating pipe!", programName);
+        fprintf(stderr, "[%s] Error creating pipe!\n", programName);
         return false;
     }
 
@@ -138,27 +138,36 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     checkFile(leftRead, "Error opening leftRead");
     checkFile(rightRead, "Error opening rightRead");
 
-    float mean;
-    float sum = 0;
-    for (int i = 0; i < numberOfElements; ++i) {
-        sum += points[i].x;
-    }
-    mean = sum / (float) numberOfElements;
-//    fprintf(stderr, "mean: %f\n", mean);
+//    float mean;
+//    float sum = 0;
+//    for (int i = 0; i < numberOfElements; ++i) {
+//        sum += points[i].x;
+//    }
+//    mean = sum / (float) numberOfElements;
+//    fprintf(stderr, "mean: %f\n", mean); //TODO: calculate mean for x AND y
+    double mean = calculateArithmeticMean(points, 'x', numberOfElements);
+
+    qsort(points, (size_t) numberOfElements, sizeof(Point), compareX);
+    size_t index = getIndexOfMean(points, mean, numberOfElements, 'x');
+    index = index % 2 == 0 ? index : index + 1;
+
+    Point *smaller = dividePoints(points, 0, index, numberOfElements);
+    Point *bigger = dividePoints(points, index, numberOfElements, numberOfElements);
+
+    printPointPointer(leftWrite, smaller, numberOfElements - index);
+    printPointPointer(rightWrite, bigger, index);
 
 
-
-    for (int i = 0; i < numberOfElements; ++i) {
-        if (points[i].x <= mean) {
-            printPointToFile(leftWrite, &points[i]);
-        }
-    }
-
-    for (int i = 0; i < numberOfElements; ++i) {
-        if (points[i].x > mean) {
-            printPointToFile(rightWrite, &points[i]);
-        }
-    }
+//    for (int i = 0; i < numberOfElements; ++i) {
+//        if (points[i].x <= mean) {
+//            printPointToFile(leftWrite, &points[i]);
+//        }
+//    }
+//    for (int i = 0; i < numberOfElements; ++i) {
+//        if (points[i].x > mean) {
+//            printPointToFile(rightWrite, &points[i]);
+//        }
+//    }
 
 
     fflush(leftWrite);
@@ -198,8 +207,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
 
     if (leftReadAmount != (size_t) -1 && rightReadAmount != (size_t) -1) pair3 = newPairFromTwoPairs(pair1, pair2);
-    else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair1, pair2.p1);
-    else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair2, pair1.p1);
+    else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair1, smaller[0]);
+    else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair2, bigger[0]);
     else
         assert(0);
 
@@ -209,6 +218,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     Pair pairNearest = nearestPair(pair1, pair2, pair3);
 //    printf("Nearest Pair:\n");
+
     printPair(pairNearest);
 
     //TODO: Close all pipes all the time!

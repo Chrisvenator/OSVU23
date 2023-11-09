@@ -259,9 +259,5 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3);
 
 Pair newPair(Point p1, Point p2);
 
-bool writeToChild(Process process, Point *points, size_t size);
-
-bool waitForChild(Process process);
-
 
 #endif //OSVU23_CPAIR_H

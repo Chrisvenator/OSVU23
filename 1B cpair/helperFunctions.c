@@ -36,8 +36,22 @@ void cleanupProcess(struct Process *process) {
 
 Pair newPair(Point p1, Point p2) {
     Pair p;
-    p.p1 = p1;
-    p.p2 = p2;
+
+    if (p1.x < p2.x) {
+        p.p1 = p1;
+        p.p2 = p2;
+    } else if (p1.x == p2.x) {
+        if (p1.y <= p2.y) {
+            p.p1 = p1;
+            p.p2 = p2;
+        } else {
+            p.p1 = p2;
+            p.p2 = p1;
+        }
+    } else {
+        p.p1 = p2;
+        p.p2 = p1;
+    }
     p.dist = distance(p1, p2);
 
     return p;
@@ -398,26 +412,19 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
     if (p2.dist < nearest.dist) nearest = p2;
     if (p3.dist < nearest.dist) nearest = p3;
 
-    return nearest;
-}
-
-bool writeToChild(Process process, Point *points, size_t size) {
-    // TODO : 1 is a placeholder
-    FILE *rightWrite = fdopen(process.writePipe[1], "w");
-    printPointPointer(rightWrite, points, size);
-
-    return true;
-}
-
-bool waitForChild(Process process) {
-    int status;
-    waitpid(process.pid, &status, 0);
-
-    if (WEXITSTATUS(status) == 0) {
-        return true;
-    } else {
-        return false;
+    if (nearest.p1.x > nearest.p2.x) {
+        Point temp = nearest.p1;
+        nearest.p1 = nearest.p2;
+        nearest.p2 = temp;
+    } else if (nearest.p1.x == nearest.p2.x) {
+        if (nearest.p1.y > nearest.p2.y) {
+            Point temp = nearest.p1;
+            nearest.p1 = nearest.p2;
+            nearest.p2 = temp;
+        }
     }
+
+    return nearest;
 }
 
 // TODO: rewrite this cause i copied it from my codebase
@@ -427,7 +434,7 @@ ssize_t readPair(FILE *file, Pair *pair) {
     char *line = NULL;
 
     if ((getline(&line, &size, file)) == -1) {
-        fprintf(stderr, "ONLY ZERO LINE!\n");
+        fprintf(stderr, "ONLY ZERO LINES!\n");
         return -1;
     }
     pair->p1 = getCoordinates(line);
