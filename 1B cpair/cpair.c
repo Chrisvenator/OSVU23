@@ -9,7 +9,7 @@
  * @param argc
  * @param argv
  * @return
- * @author Christopher Scherling 12119060
+ * @author Christopher Scherling 12119060 :)
  */
 int main(int argc, char *argv[]) {
     programName = argv[0];
@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
 
     //TODO: THIS:
     if (findClosestPair(points, &myNumberOfElements, leftPipe, rightPipe) == false) {
+        printf("failed\n");
         exit(EXIT_FAILURE);
     }
 //
@@ -52,8 +53,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             return true;
             break;
         case 2: {
-            printPointToFile(stdout, points[0]);
-            printPointToFile(stdout, points[1]);
+            printPointToFile(stdout, &points[0]);
+            printPointToFile(stdout, &points[1]);
             free(points);
             return true;
             break;
@@ -77,6 +78,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         case -1:
             fprintf(stderr, "Cannot fork!\n");
             return false;
+            break;
         case 0: //We are now in the first child element
             if (dup2(processLeft.readPipe[1], STDOUT_FILENO) == -1 ||
                 dup2(processLeft.writePipe[0], STDIN_FILENO) == -1) {
@@ -92,35 +94,37 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
             free(points);
             return false;
+            break;
         default:
-            switch (processRight.pid = fork()) {
-                case -1:
-                    fprintf(stderr, "[%s]Cannot fork!", programName);
-                    return false;
-                case 0:
-                    if (dup2(processRight.readPipe[1], STDOUT_FILENO) == -1 ||
-                        dup2(processRight.writePipe[0], STDIN_FILENO) == -1) {
-                        fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
-                        return false;
-                    }
+            break;
+    }
 
-                    cleanupProcess(&processLeft);
-                    cleanupProcess(&processRight);
+    switch (processRight.pid = fork()) {
+        case -1:
+            fprintf(stderr, "Cannot fork!\n");
+            return false;
+            break;
+        case 0: //We are now in the first child element
+            if (dup2(processLeft.readPipe[1], STDOUT_FILENO) == -1 ||
+                dup2(processLeft.writePipe[0], STDIN_FILENO) == -1) {
 
-                    //dup2 (r&w) here
-                    execlp(programName, programName, NULL);
-
-                    fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
-                    free(points);
-                    return false;
-                default:
-                    break;
+                fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
+                return false;
             }
+            cleanupProcess(&processLeft);
+            cleanupProcess(&processRight);
+
+            execlp(programName, programName, NULL);
+
+            fprintf(stderr, "[%s] ERROR: Cannot execute: %s\n", programName, strerror(errno));
+            free(points);
+            return false;
+            break;
+        default:
             break;
     }
 
     // TODO: close unused pipe ends by parent process
-    // TODO: add leftWrite and rightWrite
     FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
     FILE *rightWrite = fdopen(processRight.writePipe[1], "w");
 
@@ -136,10 +140,12 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     for (int i = 0; i < numberOfElements; ++i) {
         if (points[i].x <= mean) {
-            printPointToFile(leftWrite, points[i]);
+            printPointToFile(leftWrite, &points[i]);
+
         }
         else {
-            printPointToFile(rightWrite, points[i]);
+            printPointToFile(rightWrite, &points[i]);
+            //printPointToFile(stdout, &points[i]);
         }
     }
 
@@ -153,6 +159,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     waitpid(processRight.pid, &status, 0);
 
     if (status != EXIT_SUCCESS) {
+        printf("dead child\n");
         return false;
     }
 
@@ -160,6 +167,9 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     size_t leftReadAmount = readPair(leftRead, left);
     size_t rightReadAmount = readPair(rightRead, right);
     Pair pair3;
+
+    printf("goofy\n");
+    printf("%zu %zu\n", leftReadAmount, rightReadAmount);
 
      // What?
 //    //check if no value has been returned. <--

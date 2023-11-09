@@ -100,7 +100,7 @@ void usage(void);
  * the program if stdin opening fails, memory allocation fails, or reallocating memory fails.
  * @warning The user needs to free the array manually later!
  */
-Point *loadData();
+Point *loadData(size_t *ptr_numberOfElements);
 
 /**
  * @brief Checks if the string is a valid representation of a float.

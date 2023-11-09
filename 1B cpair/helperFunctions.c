@@ -185,8 +185,8 @@ void printPair(Pair pair) {
     }
 }
 
-void printPointToFile(FILE *file, Point p) {
-    fprintf(file, "%.3f %.3f\n", p.x, p.y);
+void printPointToFile(FILE *file, Point *p) {
+    fprintf(file, "%.3f %.3f\n", p->x, p->y);
 }
 
 void printPointPointer(FILE *file, Point *points, size_t size) {
