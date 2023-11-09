@@ -210,6 +210,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t i = 0; //<-- Count how many elements there have been
 
     while (getline(&line, &size, stdin) >= 0) {
+        if (strcmp(line, "\n") == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
             Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
@@ -220,12 +221,14 @@ Point *loadData(size_t *ptr_numberOfElements) {
             }
             points = temp;
         }
-        points[i] = strtop(line);
+        points[i] = getCoordinates(line);
         i++;
     }
 
     *ptr_numberOfElements = i;
+
     free(line); // Free the buffer allocated by getline
+
     return points;
 }
 
