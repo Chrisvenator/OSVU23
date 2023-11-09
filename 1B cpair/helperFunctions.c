@@ -1,8 +1,3 @@
-//
-// Created by junioradmin on 03.11.23.
-//
-#include "cpair.h"
-
 void usage(void) {
     fprintf(stderr, "USAGE: %s\n", programName);
     exit(EXIT_FAILURE);
@@ -19,16 +14,59 @@ struct Pair {// holds a pair of point and the distance between them
 };
 
 struct Process {
-    int pid;
-    int pipeWrite[2];
-    int pipeRead[2];
+    pid_t pid;       // Process ID
+    int readPipe[2]; // Read pipe (file descriptors)
+    int writePipe[2]; // Write pipe (file descriptors)
 };
+
+// Function to initialize a Process struct
+void initProcess(struct Process *process) {
+    process->pid = -1; // Initialize PID to an invalid value
+    pipe(process->readPipe);  // Create the read pipe
+    pipe(process->writePipe); // Create the write pipe
+}
+
+// Function to clean up and close pipes for a Process struct
+void cleanupProcess(struct Process *process) {
+    close(process->readPipe[0]);  // Close read pipe input
+    close(process->readPipe[1]);  // Close read pipe output
+    close(process->writePipe[0]); // Close write pipe input
+    close(process->writePipe[1]); // Close write pipe output
+}
 
 Pair newPair(Point p1, Point p2) {
     Pair p;
     p.p1 = p1;
     p.p2 = p2;
     p.dist = distance(p1, p2);
+
+    return p;
+}
+
+// TODO: rewrite this cause i copied it from my codebase
+Point strtop(char *input) {
+    Point p;
+
+    char *x_str = strtok(input, " ");
+    char *y_str = strtok(NULL, "\n");
+
+    if (x_str == NULL || y_str == NULL) {
+        fprintf(stderr, "Malformed input line\n");
+    }
+
+    char *endptr_x;
+    p.x = strtof(x_str, &endptr_x);
+
+    char *endptr_y;
+    p.y = strtof(y_str, &endptr_y);
+
+    if (*endptr_x != '\0') {
+        fprintf(stderr, "Malformed input line\n");
+    }
+
+    if (*endptr_y != '\0') {
+        fprintf(stderr, "Malformed input line\n");
+    }
 
     return p;
 }
@@ -148,24 +186,54 @@ void printPair(Pair pair) {
     }
 }
 
+void printPointToFile(FILE *file, Point *p) {
+    fprintf(file, "%.3f %.3f\n", p->x, p->y);
+}
+
 void printPointPointer(FILE *file, Point *points, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         fprintf(file, "%.3f %.3f\n", points[i].x, points[i].y);
     }
 }
 
+//Point *loadData(size_t *ptr_numberOfElements) {
+//
+//    size_t capacity = 2;
+//    Point *points = malloc(capacity * sizeof(Point));
+//    if (points == NULL) {
+//        perror("Failed to allocate memory");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    char *line = NULL;
+//    size_t linelen = 0;
+//
+//    while ((getline(&line, &linelen, stdin)) != -1) {
+//        if (*ptr_numberOfElements == capacity) {
+//            capacity *= 2;
+//            Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
+//            if (temp == NULL)
+//            {
+//                free(line);
+//                free(points);
+//                exit(EXIT_FAILURE);
+//            }
+//            points = temp;
+//        }
+//
+//        Point p = strtop(line);
+//        points[*ptr_numberOfElements] = p;
+//        *ptr_numberOfElements += 1;
+//    }
+//
+//    free(line); // Free the buffer allocated by getline
+//
+//    return points;
+//}
+
 //TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
-    //Check if we can open stdin
-    FILE *input = stdin;
 
-    if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) < 0) {
-        input = fopen("./1B cpair/stdin.txt", "r");
-//        perror("Error opening stdout");
-//        exit(EXIT_FAILURE);
-    }
-
-    //Allocate memory for 2 points of the points []
     size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
@@ -173,12 +241,11 @@ Point *loadData(size_t *ptr_numberOfElements) {
         exit(EXIT_FAILURE);
     }
 
-
     char *line = NULL;
     size_t size = 0;
-
     size_t i = 0; //<-- Count how many elements there have been
-    while (getline(&line, &size, input) >= 0) {
+
+    while (getline(&line, &size, stdin) >= 0) {
         if (strcmp(line, "\n") == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
@@ -190,9 +257,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
             }
             points = temp;
         }
-
-        fprintf(stdout, "Input line: %s", line);
-        points[i] = getCoordinates(line);
+        points[i] = strtop(line);
         i++;
     }
 
@@ -367,11 +432,10 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
 }
 
 bool writeToChild(Process process, Point *points, size_t size) {
-    FILE *writePipe = fdopen(process.pipeWrite, "w");
-    printPointPointer(writePipe, points, size);
+    // TODO : 1 is a placeholder
+    FILE *rightWrite = fdopen(process.writePipe[1], "w");
+    printPointPointer(rightWrite, points, size);
 
-    fflush(writePipe);
-    fclose(writePipe);
     return true;
 }
 
@@ -386,31 +450,32 @@ bool waitForChild(Process process) {
     }
 }
 
-Pair readPair(int capacity, FILE *file) {
-    Pair pair;
+// TODO: rewrite this cause i copied it from my codebase
+size_t readPair(FILE *file, Pair pair) {
 
-    char *line = NULL;
+    size_t stored = 0;
     size_t size = 0;
+    char *line = NULL;
 
-    int i = 0; //<-- Count how many elements there have been
-    while (getline(&line, &size, file) >= 0) { //TODO: replace with stdin
-        if (strcmp(line, "\n") == 0) continue;
-        if (i == 0) pair.p1 = getCoordinates(line);
-        if (i == 1) pair.p2 = getCoordinates(line);
-        i++;
+    if((getline(&line, &size, file)) != -1) {
+        return -1;
     }
+    pair.p1 = strtop(line);
+    stored++;
 
-
-    //TODO: remove after testing!
-    if (i == 0) assert(1);
-    if (i == 1) {
-        Point invalid_Point;
-        invalid_Point.x = FLT_MAX;
-        invalid_Point.y = FLT_MAX;
-
-        pair.p1 = invalid_Point;
-        pair.p2 = invalid_Point;
+    if((getline(&line, &size, file)) != -1) {
+        return -1;
     }
+    pair.p2 = strtop(line);
+    stored++;
 
-    return pair;
+    free(line);
+    return stored;
+}
+
+void checkFile(FILE *file, const char *description) {
+    if (file == NULL) {
+        perror(description);  // Print error message
+        exit(EXIT_FAILURE);   // Terminate the program
+    }
 }
