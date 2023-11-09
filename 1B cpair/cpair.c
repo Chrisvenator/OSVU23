@@ -17,8 +17,9 @@ int main(int argc, char *argv[]) {
     size_t myNumberOfElements;
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
-
     Point *points = loadData(ptr_numberOfElements);
+
+    fprintf(stderr, "%zu\n", *ptr_numberOfElements);
 
     for (int i = 0; i < myNumberOfElements; i++) {
         printf("%f %f\n", points[i].x, points[i].y);
@@ -145,7 +146,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         }
         else {
             printPointToFile(rightWrite, &points[i]);
-            //printPointToFile(stdout, &points[i]);
+            printPointToFile(stdout, &points[i]);
         }
     }
 

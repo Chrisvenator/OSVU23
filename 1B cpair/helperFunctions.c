@@ -221,7 +221,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
             }
             points = temp;
         }
-        points[i] = getCoordinates(line);
+        points[i] = strtop(line);
         i++;
     }
 
