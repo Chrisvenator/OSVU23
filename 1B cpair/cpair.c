@@ -19,19 +19,14 @@ int main(int argc, char *argv[]) {
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
-    fprintf(stderr, "\n");
+//    fprintf(stderr, "\n");
 
 
-    for (int i = 0; i < 2; ++i) {
-        printPointToFile(stderr, &points[i]);
-    }
+//    fprintf(stderr, "All points:\n");
+//    for (int i = 0; i < 4; ++i) {
+//        printPointToFile(stderr, &points[i]);
+//    }
 
-    fprintf(stderr, "\n%zu\n", *ptr_numberOfElements);
-
-    for (int i = 0; i < myNumberOfElements; i++) {
-        printf("%f %f\n", points[i].x, points[i].y);
-    }
-    printf("===========================\n");
 
     int leftPipe[2];
     int rightPipe[2];
@@ -69,8 +64,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             break;
     }
 
-    struct Process processLeft;
-    struct Process processRight;
+    Process processLeft;
+    Process processRight;
     initProcess(&processLeft);
     initProcess(&processRight);
 
@@ -149,7 +144,9 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         sum += points[i].x;
     }
     mean = sum / (float) numberOfElements;
-    fprintf(stderr, "mean: %f\n", mean);
+//    fprintf(stderr, "mean: %f\n", mean);
+
+
 
     for (int i = 0; i < numberOfElements; ++i) {
         if (points[i].x <= mean) {
@@ -158,46 +155,66 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     }
 
     for (int i = 0; i < numberOfElements; ++i) {
-        fprintf(stderr, "prep: \n");
-
         if (points[i].x > mean) {
-            fprintf(stderr, "sex.com: \n");
             printPointToFile(rightWrite, &points[i]);
-            // TODO: continue debugging from here
-            printPointToFile(stdout, &points[i]);
         }
     }
-
 
 
     fflush(leftWrite);
     fflush(rightWrite);
     fclose(leftWrite);
     fclose(rightWrite);
+    close(processLeft.writePipe[0]);
+    close(processRight.writePipe[0]);
+
 
     int status;
     waitpid(processLeft.pid, &status, 0);
     waitpid(processRight.pid, &status, 0);
+
+    close(processLeft.readPipe[1]);
+    close(processRight.readPipe[1]);
 
     if (status != EXIT_SUCCESS) {
         printf("dead child\n");
         return false;
     }
 
-    Pair left, right;
-    size_t leftReadAmount = readPair(leftRead, left);
-    size_t rightReadAmount = readPair(rightRead, right);
+
+    Pair pair1, pair2;
+    ssize_t leftReadAmount = readPair(leftRead, &pair1);
+    ssize_t rightReadAmount = readPair(rightRead, &pair2);
+
+
     Pair pair3;
 
-    printf("goofy\n");
-    printf("%zu %zu\n", leftReadAmount, rightReadAmount);
+//    printf("Left amount: %zu, right amount: %zu\n", leftReadAmount, rightReadAmount);
 
-    printPair(left);
-    printPair(right);
+//    printf("Pair 1: %f\n", pair1.dist);
+//    printPair(pair1);
+//    printf("Pair 2: %f\n", pair2.dist);
+//    printPair(pair2);
+
+
+    if (leftReadAmount != (size_t) -1 && rightReadAmount != (size_t) -1) pair3 = newPairFromTwoPairs(pair1, pair2);
+    else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair1, pair2.p1);
+    else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pair3 = newPairFromOnePairAndOnePoint(pair2, pair1.p1);
+    else
+        assert(0);
+
+//    printf("Pair 3: %f\n", pair3.dist);
+//    printPair(pair3);
+
+
+    Pair pairNearest = nearestPair(pair1, pair2, pair3);
+//    printf("Nearest Pair:\n");
+    printPair(pairNearest);
 
     //TODO: Close all pipes all the time!
     //TODO: keine exit() beutzen. Nur in main(); Sonst is es sehr einfach zu vergessen die pipes zu schlißen
     //^-->  Methode von void in boolean umwandeln und dann alle pipes schließen. bzw eine Funktion erstellen.
+
 
     return true;
 }

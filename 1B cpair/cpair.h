@@ -253,8 +253,6 @@ size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 
 bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightPipe[2]);
 
-Pair calculateNearestPointsBruteForce(Point *points, size_t size);
-
 Pair newPairFromTwoPairs(Pair p1, Pair p2);
 
 Pair nearestPair(Pair p1, Pair p2, Pair p3);
