@@ -100,7 +100,7 @@ void usage(void);
  * the program if stdin opening fails, memory allocation fails, or reallocating memory fails.
  * @warning The user needs to free the array manually later!
  */
-Point *loadData();
+Point *loadData(size_t *ptr_numberOfElements);
 
 /**
  * @brief Checks if the string is a valid representation of a float.
@@ -251,8 +251,7 @@ Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElem
 size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 
 
-//bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger, int leftPipe[2], int rightPipe[2]);
-bool findClosestPair(Point *points, const size_t *n, Point *smaller, Point *bigger);
+bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightPipe[2]);
 
 Pair calculateNearestPointsBruteForce(Point *points, size_t size);
 
