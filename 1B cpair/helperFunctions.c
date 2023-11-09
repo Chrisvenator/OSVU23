@@ -43,6 +43,7 @@ Pair newPair(Point p1, Point p2) {
     return p;
 }
 
+// TODO: rewrite this cause i copied it from my codebase
 Point strtop(char *input) {
     Point p;
 
@@ -194,6 +195,41 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
         fprintf(file, "%.3f %.3f\n", points[i].x, points[i].y);
     }
 }
+
+//Point *loadData(size_t *ptr_numberOfElements) {
+//
+//    size_t capacity = 2;
+//    Point *points = malloc(capacity * sizeof(Point));
+//    if (points == NULL) {
+//        perror("Failed to allocate memory");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    char *line = NULL;
+//    size_t linelen = 0;
+//
+//    while ((getline(&line, &linelen, stdin)) != -1) {
+//        if (*ptr_numberOfElements == capacity) {
+//            capacity *= 2;
+//            Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
+//            if (temp == NULL)
+//            {
+//                free(line);
+//                free(points);
+//                exit(EXIT_FAILURE);
+//            }
+//            points = temp;
+//        }
+//
+//        Point p = strtop(line);
+//        points[*ptr_numberOfElements] = p;
+//        *ptr_numberOfElements += 1;
+//    }
+//
+//    free(line); // Free the buffer allocated by getline
+//
+//    return points;
+//}
 
 //TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
@@ -414,6 +450,7 @@ bool waitForChild(Process process) {
     }
 }
 
+// TODO: rewrite this cause i copied it from my codebase
 size_t readPair(FILE *file, Pair pair) {
 
     size_t stored = 0;

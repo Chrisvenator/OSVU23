@@ -14,15 +14,19 @@
 int main(int argc, char *argv[]) {
     programName = argv[0];
     if (argc != 1) usage(); //If the wrong number of arguments have been passed, throw an error
+
     size_t myNumberOfElements;
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
+    fprintf(stderr, "\n");
+
 
     for (int i = 0; i < 2; ++i) {
         printPointToFile(stderr, &points[i]);
     }
-    fprintf(stderr, "%zu\n", *ptr_numberOfElements);
+
+    fprintf(stderr, "\n%zu\n", *ptr_numberOfElements);
 
     for (int i = 0; i < myNumberOfElements; i++) {
         printf("%f %f\n", points[i].x, points[i].y);
@@ -38,8 +42,6 @@ int main(int argc, char *argv[]) {
         printf("failed\n");
         exit(EXIT_FAILURE);
     }
-//
-//    free(points);
 
     exit(EXIT_SUCCESS);
 }
@@ -72,6 +74,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     initProcess(&processLeft);
     initProcess(&processRight);
 
+    //TODO: add checks for cases when pipes failed to open
 
     if (pipe(leftPipe) == -1 || pipe(rightPipe) == -1) {
         fprintf(stderr, "[%s] Error creating pipe!", programName);
@@ -109,8 +112,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             return false;
             break;
         case 0: //We are now in the first child element
-            if (dup2(processLeft.readPipe[1], STDOUT_FILENO) == -1 ||
-                dup2(processLeft.writePipe[0], STDIN_FILENO) == -1) {
+            if (dup2(processRight.readPipe[1], STDOUT_FILENO) == -1 ||
+                dup2(processRight.writePipe[0], STDIN_FILENO) == -1) {
 
                 fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                 return false;
@@ -146,17 +149,26 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         sum += points[i].x;
     }
     mean = sum / (float) numberOfElements;
+    fprintf(stderr, "mean: %f\n", mean);
 
     for (int i = 0; i < numberOfElements; ++i) {
         if (points[i].x <= mean) {
             printPointToFile(leftWrite, &points[i]);
         }
-        else {
+    }
+
+    for (int i = 0; i < numberOfElements; ++i) {
+        fprintf(stderr, "prep: \n");
+
+        if (points[i].x > mean) {
+            fprintf(stderr, "sex.com: \n");
             printPointToFile(rightWrite, &points[i]);
             // TODO: continue debugging from here
             printPointToFile(stdout, &points[i]);
         }
     }
+
+
 
     fflush(leftWrite);
     fflush(rightWrite);
@@ -180,23 +192,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     printf("goofy\n");
     printf("%zu %zu\n", leftReadAmount, rightReadAmount);
 
-     // What?
-//    //check if no value has been returned. <--
-//    if (pair1.p1.x != FLT_MAX && pair2.p1.x != FLT_MAX) pair3 = newPairFromTwoPairs(pair1, pair2);
-//    if (pair1.p1.x == FLT_MAX && pair2.p1.x == FLT_MAX) pair3 = newPair(smaller[0], bigger[0]);
-//    if (pair1.p1.x == FLT_MAX) pair3 = newPairFromOnePairAndOnePoint(pair2, smaller[0]);
-//    if (pair2.p1.x == FLT_MAX) pair3 = newPairFromOnePairAndOnePoint(pair1, bigger[0]);
-
-
-    //calculate nearest pair and print it:
     printPair(left);
     printPair(right);
-
-    //close pipes
-
-
-//    printPair(calculateNearestPointsBruteForce(points, numberOfElements));
-
 
     //TODO: Close all pipes all the time!
     //TODO: keine exit() beutzen. Nur in main(); Sonst is es sehr einfach zu vergessen die pipes zu schlißen
