@@ -1,3 +1,13 @@
+/**
+ * @brief mycompress takes a string and compresses it.
+ * @details mycompress takes an input string from eiter stdin (or if given, input file(s)). <br>
+ * The Program then compresses it and (if given) writes the result into an output file <br>
+ * The input is compressed by substituting subsequent identical characters by only one occurence of the character followed by the number of characters
+ * @author Christopher Scherling 12119060
+ * @date 01.11.2023
+ */
+
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +35,7 @@ void usage(void) {
  * @param outputFile A pointer to a FILE object that represents the output file where the compressed data will be written.
  * @param read  amount of read characters including \n
  * @param written amount of written characters including \n
- * @details function does not check for newlines > manually done in main()
+ * @note function does not check for newlines > manually done in main()
  */
 void compress(char *input, FILE *outputFile, uint64_t *read, uint64_t *written) {
 
@@ -90,7 +100,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    //Parameters and links
+    //Define Parameters and links
     uint64_t charsRead = 0;
     uint64_t charsWritten = 0;
 
