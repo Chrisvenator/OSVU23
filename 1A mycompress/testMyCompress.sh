@@ -57,7 +57,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 10 characters
+expected_stderr="Read: 10 characters
 Written: 3 characters" 
 actual_stderr=$(<stderr)
 
@@ -91,7 +91,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 27 characters
+expected_stderr="Read: 27 characters
 Written: 15 characters" 
 actual_stderr=$(<stderr)
 
@@ -126,7 +126,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 30 characters
+expected_stderr="Read: 30 characters
 Written: 11 characters" 
 actual_stderr=$(<stderr)
 
@@ -158,7 +158,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 16 characters
+expected_stderr="Read: 16 characters
 Written: 31 characters" 
 actual_stderr=$(<stderr)
 
@@ -193,7 +193,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 14 characters
+expected_stderr="Read: 14 characters
 Written: 12 characters" 
 actual_stderr=$(<stderr)
 
@@ -230,7 +230,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 44 characters
+expected_stderr="Read: 44 characters
 Written: 78 characters" 
 actual_stderr=$(<stderr)
 
@@ -266,7 +266,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 26 characters
+expected_stderr="Read: 26 characters
 Written: 29 characters" 
 actual_stderr=$(<stderr)
 
@@ -300,7 +300,7 @@ else
 fi
 
 # Now check the stderr file
-expected_stderr="READ: 8003 characters
+expected_stderr="Read: 8003 characters
 Written: 10 characters" 
 actual_stderr=$(<stderr)
 

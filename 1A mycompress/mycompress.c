@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     }
 
     //Write the amount of characters read and written into stderr:
-    fprintf(stderr, "READ: %lu characters\nWritten: %lu characters\n", charsRead, charsWritten);
+    fprintf(stderr, "Read: %lu characters\nWritten: %lu characters\n", charsRead, charsWritten);
     if (out != stdout) { fclose(out); }
     exit(EXIT_SUCCESS);
 }
