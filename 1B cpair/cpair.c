@@ -247,10 +247,25 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
 
 //    fprintf(stderr, "\nNearest Pair:\n");
+
+    pairNearest = closestPairIncludingMeanProblem(points, numberOfElements, pairNearest, mean, 'x');
     printPair(stdout, pairNearest);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     //TODO: Close all pipes all the time!
-
-
     return true;
 }

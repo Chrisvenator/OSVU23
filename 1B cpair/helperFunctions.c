@@ -59,34 +59,6 @@ Pair newPair(Point p1, Point p2) {
     return p;
 }
 
-// TODO: rewrite this cause i copied it from my codebase
-Point strtop(char *input) {
-    Point p;
-
-    char *x_str = strtok(input, " ");
-    char *y_str = strtok(NULL, "\n");
-
-    if (x_str == NULL || y_str == NULL) {
-        fprintf(stderr, "Malformed input line\n");
-    }
-
-    char *endptr_x;
-    p.x = strtof(x_str, &endptr_x);
-
-    char *endptr_y;
-    p.y = strtof(y_str, &endptr_y);
-
-    if (*endptr_x != '\0') {
-        fprintf(stderr, "Malformed input line\n");
-    }
-
-    if (*endptr_y != '\0') {
-        fprintf(stderr, "Malformed input line\n");
-    }
-
-    return p;
-}
-
 int is_float(char *str) {
     char *endptr;
     errno = 0;  // To distinguish success/failure after the call to strtod
@@ -200,10 +172,6 @@ void printPair(FILE *output, Pair pair) {
     } else {
         fprintf(output, "%.3f %.3f\n%.3f %.3f\n", pair.p2.x, pair.p2.y, pair.p1.x, pair.p1.y);
     }
-}
-
-void printPointToFile(FILE *file, Point *p) {
-    fprintf(file, "%.3f %.3f\n", p->x, p->y);
 }
 
 void printPointPointer(FILE *file, Point *points, size_t size) {
@@ -457,3 +425,89 @@ void checkFile(FILE *file, const char *description) {
         exit(EXIT_FAILURE);   // Terminate the program
     }
 }
+
+Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
+    if (size < 2) {
+        fprintf(stderr,
+                "[%s] ERROR: the size to calculate the nearest distance must be bigger or equals than 2. Size: %zu",
+                programName, size);
+        assert(1);
+    } else if (points == NULL) {
+        fprintf(stderr, "Invalid input in 'getIndexOfMean': points is NULL.\n");
+        assert(1);
+    }
+
+    Pair p;
+    p.p1 = points[0];
+    p.p2 = points[1];
+    p.dist = distance(p.p1, p.p2);
+    if (size == 2) return p;
+
+
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t j = i + 1; j < size; ++j) {
+            double dist = distance(points[i], points[j]);
+            if (dist < p.dist) {
+                p.p1 = points[i];
+                p.p2 = points[j];
+                p.dist = dist;
+            }
+        }
+    }
+    return p;
+}
+
+Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pair nearestPair, double mean, char axis) {
+    double delta = nearestPair.dist;
+    if (numberOfElements < 2) return nearestPair;
+
+    size_t capacity = 2;
+    Point *pointsCloseToMean = malloc(capacity * sizeof(Point));
+    size_t position = 0;
+    if (pointsCloseToMean == NULL) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = 0; i < numberOfElements; ++i) {
+        if (i >= capacity) { // check if we need to increase the size of the array
+            capacity *= 2;
+            Point *temp = (Point *) realloc(pointsCloseToMean, capacity * sizeof(Point));
+            if (temp == NULL) {
+                perror("Failed to reallocate memory");
+                free(pointsCloseToMean);
+                exit(EXIT_FAILURE);
+            }
+            pointsCloseToMean = temp;
+        }
+
+        if ((points[i].x < mean && points[i].x > mean - delta) ||
+            (points[i].x > mean && points[i].x < mean + delta)) {
+            pointsCloseToMean[position] = points[i];
+            ++position;
+        }
+    }
+
+    if (position < 2) return nearestPair;
+    Pair nearest = calculateNearestPointsBruteForce(pointsCloseToMean, position);
+
+
+    free(pointsCloseToMean);
+    return nearest.dist < nearestPair.dist ? nearest : nearestPair;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
