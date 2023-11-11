@@ -140,7 +140,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     // Open pipes to read and write from //
     // ///////////////////////////////// //
 
-
+    int status = EXIT_SUCCESS;
     // TODO: close unused pipe ends by parent process
     FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
     FILE *rightWrite = fdopen(processRight.writePipe[1], "w");
@@ -148,55 +148,56 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     FILE *leftRead = fdopen(processLeft.readPipe[0], "r");
     FILE *rightRead = fdopen(processRight.readPipe[0], "r");
 
-    checkFile(leftWrite, "Error opening leftWrite");
-    checkFile(rightWrite, "Error opening rightWrite");
-    checkFile(leftRead, "Error opening leftRead");
-    checkFile(rightRead, "Error opening rightRead");
+    checkFile(leftWrite, &status, "Error opening leftWrite");
+    checkFile(rightWrite, &status, "Error opening rightWrite");
+    checkFile(leftRead, &status, "Error opening leftRead");
+    checkFile(rightRead, &status, "Error opening rightRead");
 
 
-    // /////////////////////////////////////////// //
-    // Calculate Mean, sort points and divide them //
-    // /////////////////////////////////////////// //
-
+    // /////////////////////////////////////////////////////////////////////// //
+    // Calculate Mean, sort points, divide them and write them to the children //
+    // /////////////////////////////////////////////////////////////////////// //
 
     //Check if all x-coordinates have the same Value. If yes, then use y-coordinates to proceed
     char useXorY = checkIfAllXValuesAreTheSame(points, numberOfElements) == true ? 'y' : 'x';
 
+    //sort, mean, index:
     qsort(points, (size_t) numberOfElements, sizeof(Point), useXorY == 'x' ? compareX : compareY);
     double mean = calculateArithmeticMean(points, useXorY, numberOfElements);
     size_t index = getIndexOfMean(points, mean, numberOfElements, useXorY);
 
 
-//    fprintf(stderr, "Mean: %.3f\n", mean);
-//    fprintf(stderr, "left size: %zu; right size: %zu\n", index, numberOfElements - index);
+    Point *smaller = dividePoints(points, &status, 0, index);
+    Point *bigger = dividePoints(points, &status, index, numberOfElements);
 
+    //If an error occurred, the free and close everything
+    if (status != EXIT_SUCCESS) {
+        fflush(leftWrite);
+        fflush(rightWrite);
+        fclose(leftWrite);
+        fclose(rightWrite);
+        close(processLeft.writePipe[0]);
+        close(processRight.writePipe[0]);
+        close(processLeft.readPipe[1]);
+        close(processRight.readPipe[1]);
 
-    Point *smaller = dividePoints(points, 0, index, numberOfElements);
-    Point *bigger = dividePoints(points, index, numberOfElements, numberOfElements);
+        free(smaller);
+        free(bigger);
+        return false;
+    }
 
-//    fprintf(stderr, "Smaller: \n");
-//    printPointPointer(stderr, smaller, index);
-//    fprintf(stderr, "Bigger: \n");
-//    printPointPointer(stderr, bigger, numberOfElements - index);
     printPointPointer(leftWrite, smaller, index);
     printPointPointer(rightWrite, bigger, numberOfElements - index);
-//    printPointPointer(leftWrite, smaller, numberOfElements - index);
-//    printPointPointer(rightWrite, bigger, index);
 
 
-    //Ivan's print to child:
-//    for (int i = 0; i < numberOfElements; ++i) {
-//        if (points[i].x <= mean) {
-//            printPointToFile(leftWrite, &points[i]);
-//        }
-//    }
-//    for (int i = 0; i < numberOfElements; ++i) {
-//        if (points[i].x > mean) {
-//            printPointToFile(rightWrite, &points[i]);
-//        }
-//    }
+    // ////////////////////////////////// //
+    //    Close and flush unused pipes    //
+    // ////////////////////////////////// //
 
 
+
+    free(smaller);
+    free(bigger);
     fflush(leftWrite);
     fflush(rightWrite);
     fclose(leftWrite);
@@ -205,7 +206,6 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     close(processRight.writePipe[0]);
 
 
-    int status;
     waitpid(processLeft.pid, &status, 0);
     waitpid(processRight.pid, &status, 0);
 
@@ -214,8 +214,15 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     if (status != EXIT_SUCCESS) {
         printf("dead child\n");
+        fclose(leftRead);
+        fclose(rightRead);
         return false;
     }
+
+
+    // ////////////////////////////////// //
+    // Read the answers from the children //
+    // ////////////////////////////////// //
 
 
     Pair pair1, pair2;
@@ -227,11 +234,11 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     Pair pair3;
 
-//    fprintf(stderr, "Left amount: %zu, right amount: %zu\n", leftReadAmount, rightReadAmount);
-//    fprintf(stderr, "Pair 1: %f\n", pair1.dist);
-//    printPair(stderr, pair1);
-//    fprintf(stderr, "Pair 2: %f\n", pair2.dist);
-//    printPair(stderr, pair2);
+
+    // /////////////////////////////////// //
+    // Validate the answers and compute P3 //
+    // /////////////////////////////////// //
+
 
     if (leftReadAmount == (size_t) -2 || rightReadAmount == (size_t) -2) return false;
 
@@ -246,24 +253,15 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
 
 
-//    fprintf(stderr, "\nNearest Pair:\n");
+
+    // //////////////////////////////////////////////////////// //
+    // Compute the rare case that the recursion is not perfect. //
+    //                    Print nearest pair                    //
+    // //////////////////////////////////////////////////////// //
+
 
     pairNearest = closestPairIncludingMeanProblem(points, numberOfElements, pairNearest, mean, 'x');
     printPair(stdout, pairNearest);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     //TODO: Close all pipes all the time!

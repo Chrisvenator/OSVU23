@@ -22,14 +22,14 @@ struct Process {
 };
 
 // Function to initialize a Process struct
-void initProcess(struct Process *process) {
+void initProcess(Process *process) {
     process->pid = -1; // Initialize PID to an invalid value
     pipe(process->readPipe);  // Create the read pipe
     pipe(process->writePipe); // Create the write pipe
 }
 
 // Function to clean up and close pipes for a Process struct
-void cleanupProcess(struct Process *process) {
+void cleanupProcess(Process *process) {
     close(process->readPipe[0]);  // Close read pipe input
     close(process->readPipe[1]);  // Close read pipe output
     close(process->writePipe[0]); // Close write pipe input
@@ -59,20 +59,20 @@ Pair newPair(Point p1, Point p2) {
     return p;
 }
 
-int is_float(char *str) {
+bool is_float(char *str) {
     char *endptr;
     errno = 0;  // To distinguish success/failure after the call to strtod
 
     strtod(str, &endptr); //convert to a double
 
     // Check for various possible errors
-    if (endptr == str) return 1;
-    if (isspace((unsigned char) *str)) return 1;
-    if (*endptr != '\0') return 1;
-    if (errno == ERANGE) return 1;
+    if (endptr == str) return false;
+    if (isspace((unsigned char) *str)) return false;
+    if (*endptr != '\0') return false;
+    if (errno == ERANGE) return false;
 
     // If we get here, it's a float
-    return 0;
+    return true;
 }
 
 void remove_all_chars(char *str, char c) {
@@ -112,13 +112,7 @@ int compareY(const void *a, const void *b) {
 }
 
 double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements) {
-    if (points == NULL || numberOfElements == 0) {
-        errno = EINVAL; // Set errno to indicate an invalid argument error.
-        fprintf(stderr,
-                "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
-                points == NULL, numberOfElements);
-        return 0.0;
-    }
+    //I don't need to check if the points are NULL or numberOfElements is 0, because it wouldn't come this far
 
     double mean = 0;
     for (size_t i = 0; i < (size_t) numberOfElements; i++) {
@@ -145,7 +139,7 @@ Point getCoordinates(char *string) {
 
     // Extract the first token
     char *token = strtok(string, " ");
-    if (token != NULL && is_float(token) == 0) x = strtof(token, NULL);
+    if (token != NULL && is_float(token) == true) x = strtof(token, NULL);
     else {
         fprintf(stderr, "[%s] ERROR: The first coordinate is not a float: %s\n", programName, token);
         exit(EXIT_FAILURE);
@@ -153,7 +147,7 @@ Point getCoordinates(char *string) {
 
 
     token = strtok(NULL, " ");
-    if (token != NULL && is_float(token) == 0) y = strtof(token, NULL);
+    if (token != NULL && is_float(token) == true) y = strtof(token, NULL);
     else {
         fprintf(stderr, "[%s] ERROR: The second coordinate is not a float: %s\n", programName, token);
         exit(EXIT_FAILURE);
@@ -182,36 +176,12 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
 
 Point *loadData(size_t *ptr_numberOfElements) {
 
-    FILE *input = stdin;
-
-//    fd_set set;
-//    struct timeval timeout;
-//
-//    // Initialize the file descriptor set
-//    FD_ZERO(&set);
-//    FD_SET(STDIN_FILENO, &set); // STDIN_FILENO is 0
-//
-//    // Initialize the timeout data structure
-//    timeout.tv_sec = 0;  // 0 seconds
-//    timeout.tv_usec = 0; // 0 microseconds
-//
-//    // Check if stdin has input
-//    int ret = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
-//    if (ret == -1) {
-//        perror("ERROR in select in loadData()");
-//    } else if (ret == 0) {
-//        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
-//        if (input == NULL) {
-//            perror("Error opening file");
-//            assert(0);
-//        }
-//    }
-
 
     size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
         perror("Failed to allocate memory");
+        free(points);
         exit(EXIT_FAILURE);
     }
 
@@ -219,7 +189,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t size = 0;
     size_t i = 0; //<-- Count how many elements there have been
 
-    while (getline(&line, &size, input) >= 0) {
+    while (getline(&line, &size, stdin) >= 0) {
         if (strcmp(line, "\n") == 0) continue; //TODO: strncmp
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
@@ -227,6 +197,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
             if (temp == NULL) {
                 perror("Failed to reallocate memory");
                 free(points);
+                free(line);
                 exit(EXIT_FAILURE);
             }
             points = temp;
@@ -238,8 +209,6 @@ Point *loadData(size_t *ptr_numberOfElements) {
     *ptr_numberOfElements = i;
 
     free(line); // Free the buffer allocated by getline
-//    free(input);
-
     return points;
 }
 
@@ -280,50 +249,24 @@ bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
 
 
 size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
-    if (points == NULL) {
-        fprintf(stderr, "Invalid input in 'getIndexOfMean': points is NULL.\n");
-        return SIZE_MAX; // Indicates an error.
-    }
-
-    if (size == 0) {
-        fprintf(stderr, "Invalid input in 'getIndexOfMean': size is 0.\n");
-        return SIZE_MAX; // Indicates an error.
-    }
-
-    if (c != 'x' && c != 'y') {
-        fprintf(stderr, "Invalid input in 'getIndexOfMean': parameter c is not x or y. Aborting...\n");
-        return SIZE_MAX; // Indicates an error.
-    }
-
     for (size_t i = 0; i < size; ++i) {
         if ((c == 'x' && mean <= points[i].x) ||
             (c == 'y' && mean <= points[i].y))
             return i;
     }
 
+    //If all values are smaller (which is actually not possible. but it may happen because of rounding)
     return size - 1;
 }
 
 
-Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElements) {
-    if (points == NULL) {
-        fprintf(stderr, "Invalid input in 'dividePoints': points is NULL.\n");
-        assert(0);
-        exit(EXIT_FAILURE);
-    }
-
-    if (start > end || numberOfElements < end) {
-        fprintf(stderr, "Invalid input in 'dividePoints': end is not a valid number.\n");
-        assert(0);
-        exit(EXIT_FAILURE);
-    }
-
-
+Point *dividePoints(Point *points, int *status, size_t start, size_t end) {
     size_t numPoints = end - start;
     Point *newPoints = malloc(numPoints * sizeof(Point));
     if (newPoints == NULL) {
         fprintf(stderr, "Memory allocation failed!\n");
-        exit(EXIT_FAILURE);
+        *status = EXIT_FAILURE;
+        return newPoints;
     }
 
     for (size_t i = start, pos = 0; i < end; ++i, ++pos) {
@@ -385,22 +328,18 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
         }
     }
 
-//    printPair(stderr, p1);
-//    printPair(stderr, p2);
-//    printPair(stderr, p3);
-//    assert(0);
-
     return nearest;
 }
 
-// TODO: rewrite this cause i copied it from my codebase
+// if this function returns -1, then there has been nothing returned from the child process. Which is ok.
+// If this function returns -2, then something has gone wrong. See stderr for details:
 ssize_t readPair(FILE *file, Pair *pair) {
     ssize_t stored = 0;
     size_t size = 0;
     char *line = NULL;
 
     if ((getline(&line, &size, file)) == -1) {
-//        fprintf(stderr, "ZERO LINES PRESENT IN CHILD!\n");
+        free(line);
         return -1;
     }
     pair->p1 = getCoordinates(line);
@@ -408,6 +347,7 @@ ssize_t readPair(FILE *file, Pair *pair) {
 
     if ((getline(&line, &size, file)) == -1) {
         fprintf(stderr, "ONE LINE PRESENT IN CHILD!\n");
+        free(line);
         return -2;
     }
     pair->p2 = getCoordinates(line);
@@ -419,24 +359,15 @@ ssize_t readPair(FILE *file, Pair *pair) {
     return stored;
 }
 
-void checkFile(FILE *file, const char *description) {
+
+void checkFile(FILE *file, int *status, const char *description) {
     if (file == NULL) {
-        perror(description);  // Print error message
-        exit(EXIT_FAILURE);   // Terminate the program
+        fprintf(stderr, "%s", description);  // Print error message
+        *status = EXIT_FAILURE;
     }
 }
 
 Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
-    if (size < 2) {
-        fprintf(stderr,
-                "[%s] ERROR: the size to calculate the nearest distance must be bigger or equals than 2. Size: %zu",
-                programName, size);
-        assert(1);
-    } else if (points == NULL) {
-        fprintf(stderr, "Invalid input in 'getIndexOfMean': points is NULL.\n");
-        assert(1);
-    }
-
     Pair p;
     p.p1 = points[0];
     p.p2 = points[1];
@@ -465,7 +396,9 @@ Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pai
     Point *pointsCloseToMean = malloc(capacity * sizeof(Point));
     size_t position = 0;
     if (pointsCloseToMean == NULL) {
-        perror("Failed to allocate memory");
+        fprintf(stderr, "Failed to allocate memory");
+        free(points);
+        free(pointsCloseToMean);
         exit(EXIT_FAILURE);
     }
 
@@ -474,7 +407,8 @@ Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pai
             capacity *= 2;
             Point *temp = (Point *) realloc(pointsCloseToMean, capacity * sizeof(Point));
             if (temp == NULL) {
-                perror("Failed to reallocate memory");
+                fprintf(stderr, "Failed to reallocate memory");
+                free(points);
                 free(pointsCloseToMean);
                 exit(EXIT_FAILURE);
             }
@@ -495,19 +429,3 @@ Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pai
     free(pointsCloseToMean);
     return nearest.dist < nearestPair.dist ? nearest : nearestPair;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

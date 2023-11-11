@@ -116,7 +116,7 @@ Point *loadData(size_t *ptr_numberOfElements);
  * @param str The input string to check for float representation.
  * @return Returns 1 if the string is a valid float, 0 otherwise.
  */
-int is_float(char *str);
+bool is_float(char *str);
 
 /**
  * @brief remove_all_chars removes all occurrences c from string str
@@ -234,7 +234,7 @@ int compareY(const void *a, const void *b);
  * @param end The ending index (exclusive) for the division.
  * @return A pointer to of all elements from points from start to end
  */
-Point *dividePoints(Point *points, size_t start, size_t end, size_t numberOfElements);
+Point *dividePoints(Point *points, int *status, size_t start, size_t end);
 
 /**
  * @brief Gets the index of the first point whose coordinate is greater than or equal to the mean.
