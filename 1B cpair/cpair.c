@@ -19,13 +19,13 @@ int main(int argc, char *argv[]) {
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
-//    fprintf(stderr, "\n");
+    fprintf(stderr, "\n");
 
 
-//    fprintf(stderr, "All points:\n");
-//    for (int i = 0; i < 4; ++i) {
-//        printPointToFile(stderr, &points[i]);
-//    }
+    fprintf(stderr, "All points:\n");
+    for (int i = 0; i < 4; ++i) {
+        printPointToFile(stderr, &points[i]);
+    }
 
 
     int leftPipe[2];

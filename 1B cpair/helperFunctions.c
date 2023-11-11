@@ -249,6 +249,17 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
 //TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
 
+    FILE *input = stdin;
+
+    //TODO: Remove debug information.
+    if (isatty(STDIN_FILENO)) {
+        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
+        if (input == NULL) {
+            perror("Error opening file");
+            assert(0);
+        }
+    }
+
     size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
     if (points == NULL) {
@@ -260,7 +271,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t size = 0;
     size_t i = 0; //<-- Count how many elements there have been
 
-    while (getline(&line, &size, stdin) >= 0) {
+    while (getline(&line, &size, input) >= 0) {
         if (strcmp(line, "\n") == 0) continue; //TODO: strncmp
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
@@ -279,6 +290,8 @@ Point *loadData(size_t *ptr_numberOfElements) {
     *ptr_numberOfElements = i;
 
     free(line); // Free the buffer allocated by getline
+
+    fclose(input); //TODO: Remove after debugging
 
     return points;
 }
