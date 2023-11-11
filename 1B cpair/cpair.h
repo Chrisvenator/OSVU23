@@ -67,7 +67,7 @@ typedef struct Pair Pair;
  * @return A Point structure with the first number as the x-coordinate and the second number as the y-coordinate.
  * If the function fails to parse the string or encounters an error, it will not return; instead, it will terminate the program.
  */
-Point getCoordinates(char *string);
+Point getCoordinates(char *string, int *status);
 
 /**
  * @brief Function to compute the Euclidean distance between two points.
@@ -251,7 +251,7 @@ Point *dividePoints(Point *points, int *status, size_t start, size_t end);
 size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 
 
-bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightPipe[2]);
+static bool findClosestPair(Point *points, const size_t *n);
 
 Pair newPairFromTwoPairs(Pair p1, Pair p2);
 

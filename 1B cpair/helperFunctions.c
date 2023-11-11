@@ -22,10 +22,15 @@ struct Process {
 };
 
 // Function to initialize a Process struct
-void initProcess(Process *process) {
+bool initProcess(Process *process) {
     process->pid = -1; // Initialize PID to an invalid value
-    pipe(process->readPipe);  // Create the read pipe
-    pipe(process->writePipe); // Create the write pipe
+    if (pipe(process->readPipe) == -1 ||
+        pipe(process->writePipe) == -1) {
+        fprintf(stderr, "[%s] Failed to create pipe!", programName);
+        return false;
+    }
+
+    return true;
 }
 
 // Function to clean up and close pipes for a Process struct
@@ -124,36 +129,45 @@ double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfEl
 }
 
 
-Point getCoordinates(char *string) {
+Point getCoordinates(char *string, int *status) {
     int amountOfSpaces = 0;
     float x;
     float y;
 
+
+    //initialize Point so that the compiler shuts up...
+    Point point;
+    point.x = 0;
+    point.y = 0;
+
     for (int i = 0; i < strlen(string); ++i) if (string[i] == ' ') amountOfSpaces++;
     if (string == NULL || amountOfSpaces != 1) {
         fprintf(stderr, "[%s] ERROR: There must only be 2 coordinates. Not more, not less!\n", programName);
-        exit(EXIT_FAILURE);
+        *status = EXIT_FAILURE;
+        return point;
     }
 
     remove_all_chars(string, '\n');
 
-    // Extract the first token
+    // Extract the first float
     char *token = strtok(string, " ");
     if (token != NULL && is_float(token) == true) x = strtof(token, NULL);
     else {
         fprintf(stderr, "[%s] ERROR: The first coordinate is not a float: %s\n", programName, token);
-        exit(EXIT_FAILURE);
+        *status = EXIT_FAILURE;
+        return point;
     }
 
 
+    // Extract the second float
     token = strtok(NULL, " ");
     if (token != NULL && is_float(token) == true) y = strtof(token, NULL);
     else {
         fprintf(stderr, "[%s] ERROR: The second coordinate is not a float: %s\n", programName, token);
-        exit(EXIT_FAILURE);
+        *status = EXIT_FAILURE;
+        return point;
     }
 
-    Point point;
     point.x = x;
     point.y = y;
 
@@ -193,16 +207,29 @@ Point *loadData(size_t *ptr_numberOfElements) {
         if (strcmp(line, "\n") == 0) continue; //TODO: strncmp
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
+
+            //You should instead store the return value into a temporary variable so you can free the original pointer in case of failure, thus avoiding a memory leak.
             Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
             if (temp == NULL) {
                 perror("Failed to reallocate memory");
                 free(points);
                 free(line);
+                free(temp);
+                temp = NULL;
                 exit(EXIT_FAILURE);
             }
             points = temp;
+            temp = NULL;
         }
-        points[i] = getCoordinates(line);
+        int status = EXIT_SUCCESS;
+        points[i] = getCoordinates(line, &status);
+        if (status == EXIT_FAILURE) {
+            free(points);
+            free(line);
+            exit(EXIT_FAILURE);
+        }
+
+
         i++;
     }
 
@@ -342,7 +369,14 @@ ssize_t readPair(FILE *file, Pair *pair) {
         free(line);
         return -1;
     }
-    pair->p1 = getCoordinates(line);
+
+    int status = EXIT_SUCCESS;
+    pair->p1 = getCoordinates(line, &status);
+    if (status == EXIT_FAILURE) {
+        free(line);
+        return -2;
+    }
+
     stored++;
 
     if ((getline(&line, &size, file)) == -1) {
@@ -350,7 +384,13 @@ ssize_t readPair(FILE *file, Pair *pair) {
         free(line);
         return -2;
     }
-    pair->p2 = getCoordinates(line);
+
+    pair->p2 = getCoordinates(line, &status);
+    if (status == EXIT_FAILURE) {
+        free(line);
+        return -2;
+    }
+
     stored++;
 
     pair->dist = distance(pair->p1, pair->p2);
@@ -422,7 +462,10 @@ Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pai
         }
     }
 
-    if (position < 2) return nearestPair;
+    if (position < 2){
+        free(pointsCloseToMean);
+        return nearestPair;
+    }
     Pair nearest = calculateNearestPointsBruteForce(pointsCloseToMean, position);
 
 

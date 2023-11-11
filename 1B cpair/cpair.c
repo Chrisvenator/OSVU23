@@ -2,6 +2,7 @@
 #include "helperFunctions.c" //TODO: ABSOLUTELY REMOVE THIS LINE!!!!!!
 
 /**
+ * @file
  * @brief
  * @details
  * @note
@@ -10,8 +11,12 @@
  * @param argv
  * @return
  * @author Christopher Scherling 12119060 :)
+ * @date
  */
 int main(int argc, char *argv[]) {
+    //TODO: Make every method static
+    //TODO: Error messages shall be written to stderr and should contain the program name argv[0].
+
     programName = argv[0];
     if (argc != 1) usage(); //If the wrong number of arguments have been passed, throw an error
 
@@ -19,32 +24,20 @@ int main(int argc, char *argv[]) {
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
-//    fprintf(stderr, "\n");
-//
-//
-//    fprintf(stderr, "All points:\n");
-//    for (int i = 0; i < 4; ++i) {
-//        printPointToFile(stderr, &points[i]);
-//    }
 
 
-    int leftPipe[2];
-    int rightPipe[2];
-
-
-    //TODO: THIS:
-    if (findClosestPair(points, &myNumberOfElements, leftPipe, rightPipe) == false) {
+    if (findClosestPair(points, &myNumberOfElements) == false) {
         free(points);
         exit(EXIT_FAILURE);
     }
 
+    free(points);
     exit(EXIT_SUCCESS);
 }
 
-bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightPipe[2]) {
-    size_t numberOfElements = *n; //TODO: replace with all "numberOfElements" with *n
 
-    switch (numberOfElements) {
+static bool findClosestPair(Point *points, const size_t *numberOfElements) {
+    switch (*numberOfElements) {
         case 0:
             return false;
             break;
@@ -61,7 +54,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             break;
     }
 
-    if (checkIfAllCoordinatesAreTheSame(points, numberOfElements) == true) {
+    if (checkIfAllCoordinatesAreTheSame(points, *numberOfElements) == true) {
         Pair p;
         p.p1 = points[0];
         p.p2 = points[0];
@@ -73,15 +66,9 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
 
     Process processLeft;
     Process processRight;
-    initProcess(&processLeft);
-    initProcess(&processRight);
+    if (initProcess(&processLeft) == false) return false;
+    if (initProcess(&processRight) == false) return false;
 
-    //TODO: add checks for cases when pipes failed to open
-
-    if (pipe(leftPipe) == -1 || pipe(rightPipe) == -1) {
-        fprintf(stderr, "[%s] Error creating pipe!\n", programName);
-        return false;
-    }
 
     // ///////////////////////////////// //
     //          fork program             //
@@ -96,6 +83,9 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         case 0: //We are now in the first child element
             if (dup2(processLeft.readPipe[1], STDOUT_FILENO) == -1 ||
                 dup2(processLeft.writePipe[0], STDIN_FILENO) == -1) {
+
+                cleanupProcess(&processRight);
+                cleanupProcess(&processLeft);
 
                 fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                 return false;
@@ -121,6 +111,9 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             if (dup2(processRight.readPipe[1], STDOUT_FILENO) == -1 ||
                 dup2(processRight.writePipe[0], STDIN_FILENO) == -1) {
 
+                cleanupProcess(&processRight);
+                cleanupProcess(&processLeft);
+
                 fprintf(stderr, "[%s] ERROR: Cannot dup2: %s\n", programName, strerror(errno));
                 return false;
             }
@@ -141,7 +134,6 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     // ///////////////////////////////// //
 
     int status = EXIT_SUCCESS;
-    // TODO: close unused pipe ends by parent process
     FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
     FILE *rightWrite = fdopen(processRight.writePipe[1], "w");
 
@@ -159,16 +151,16 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     // /////////////////////////////////////////////////////////////////////// //
 
     //Check if all x-coordinates have the same Value. If yes, then use y-coordinates to proceed
-    char useXorY = checkIfAllXValuesAreTheSame(points, numberOfElements) == true ? 'y' : 'x';
+    char useXorY = checkIfAllXValuesAreTheSame(points, *numberOfElements) == true ? 'y' : 'x';
 
     //sort, mean, index:
-    qsort(points, (size_t) numberOfElements, sizeof(Point), useXorY == 'x' ? compareX : compareY);
-    double mean = calculateArithmeticMean(points, useXorY, numberOfElements);
-    size_t index = getIndexOfMean(points, mean, numberOfElements, useXorY);
+    qsort(points, (size_t) *numberOfElements, sizeof(Point), useXorY == 'x' ? compareX : compareY);
+    double mean = calculateArithmeticMean(points, useXorY, *numberOfElements);
+    size_t index = getIndexOfMean(points, mean, *numberOfElements, useXorY);
 
 
     Point *smaller = dividePoints(points, &status, 0, index);
-    Point *bigger = dividePoints(points, &status, index, numberOfElements);
+    Point *bigger = dividePoints(points, &status, index, *numberOfElements);
 
     //If an error occurred, the free and close everything
     if (status != EXIT_SUCCESS) {
@@ -176,10 +168,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         fflush(rightWrite);
         fclose(leftWrite);
         fclose(rightWrite);
-        close(processLeft.writePipe[0]);
-        close(processRight.writePipe[0]);
-        close(processLeft.readPipe[1]);
-        close(processRight.readPipe[1]);
+        cleanupProcess(&processRight);
+        cleanupProcess(&processLeft);
 
         free(smaller);
         free(bigger);
@@ -187,7 +177,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     }
 
     printPointPointer(leftWrite, smaller, index);
-    printPointPointer(rightWrite, bigger, numberOfElements - index);
+    printPointPointer(rightWrite, bigger, *numberOfElements - index);
 
 
     // ////////////////////////////////// //
@@ -260,10 +250,11 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     // //////////////////////////////////////////////////////// //
 
 
-    pairNearest = closestPairIncludingMeanProblem(points, numberOfElements, pairNearest, mean, 'x');
+    pairNearest = closestPairIncludingMeanProblem(points, *numberOfElements, pairNearest, mean, 'x');
     printPair(stdout, pairNearest);
 
 
     //TODO: Close all pipes all the time!
+    //Everything (except points) SHOULD be closed or freed when coming here...
     return true;
 }
