@@ -12,6 +12,7 @@ void usage(void) {
     exit(EXIT_FAILURE);
 }
 
+
 struct Point {
     float x, y;
 };

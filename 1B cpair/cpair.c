@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     Point *points = loadData(ptr_numberOfElements);
 
 
+
     if (findClosestPair(points, &myNumberOfElements) == false) {
         free(points);
         exit(EXIT_FAILURE);
