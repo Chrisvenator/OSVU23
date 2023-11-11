@@ -1,3 +1,5 @@
+#include <sys/select.h>
+
 void usage(void) {
     fprintf(stderr, "USAGE: %s\n", programName);
     exit(EXIT_FAILURE);
@@ -161,7 +163,6 @@ Point getCoordinates(char *string) {
     float x;
     float y;
 
-//    fprintf(stderr, "Input string: %s", string);
     for (int i = 0; i < strlen(string); ++i) if (string[i] == ' ') amountOfSpaces++;
     if (string == NULL || amountOfSpaces != 1) {
         fprintf(stderr, "[%s] ERROR: There must only be 2 coordinates. Not more, not less!\n", programName);
@@ -211,54 +212,33 @@ void printPointPointer(FILE *file, Point *points, size_t size) {
     }
 }
 
-//Point *loadData(size_t *ptr_numberOfElements) {
-//
-//    size_t capacity = 2;
-//    Point *points = malloc(capacity * sizeof(Point));
-//    if (points == NULL) {
-//        perror("Failed to allocate memory");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    char *line = NULL;
-//    size_t linelen = 0;
-//
-//    while ((getline(&line, &linelen, stdin)) != -1) {
-//        if (*ptr_numberOfElements == capacity) {
-//            capacity *= 2;
-//            Point *temp = (Point *) realloc(points, capacity * sizeof(Point));
-//            if (temp == NULL)
-//            {
-//                free(line);
-//                free(points);
-//                exit(EXIT_FAILURE);
-//            }
-//            points = temp;
-//        }
-//
-//        Point p = strtop(line);
-//        points[*ptr_numberOfElements] = p;
-//        *ptr_numberOfElements += 1;
-//    }
-//
-//    free(line); // Free the buffer allocated by getline
-//
-//    return points;
-//}
-
-//TODO: rewrite:
 Point *loadData(size_t *ptr_numberOfElements) {
 
     FILE *input = stdin;
 
-    //TODO: Remove debug information.
-    if (isatty(STDIN_FILENO)) {
-        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
+    fd_set set;
+    struct timeval timeout;
+
+    // Initialize the file descriptor set
+    FD_ZERO(&set);
+    FD_SET(STDIN_FILENO, &set); // STDIN_FILENO is 0
+
+    // Initialize the timeout data structure
+    timeout.tv_sec = 0;  // 0 seconds
+    timeout.tv_usec = 0; // 0 microseconds
+
+    // Check if stdin has input
+    int ret = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
+    if (ret == -1) {
+        perror("ERROR in select in loadData()");
+    } else if (ret == 0) {
+        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin2.txt", "r");
         if (input == NULL) {
             perror("Error opening file");
             assert(0);
         }
     }
+
 
     size_t capacity = 2;
     Point *points = malloc(capacity * sizeof(Point));
@@ -290,8 +270,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     *ptr_numberOfElements = i;
 
     free(line); // Free the buffer allocated by getline
-
-    fclose(input); //TODO: Remove after debugging
+//    free(input);
 
     return points;
 }
@@ -407,7 +386,7 @@ Pair newPairFromTwoPairs(Pair p1, Pair p2) {
 }
 
 Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
-    fprintf(stderr, "Point: %f %f\n", p.x, p.y);
+//    fprintf(stderr, "Point: %f %f\n", p.x, p.y);
     Pair pair3 = newPair(p1.p1, p);
     Pair pair4 = newPair(p1.p2, p);
 
@@ -417,6 +396,12 @@ Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
     Pair nearest = pair3;
     if (pair4.dist < nearest.dist) nearest = pair4;
 
+//    printPair(p1);
+//    printPair(pair3);
+//    printPair(pair4);
+//    printPair(nearest);
+//    fprintf(stdout, "\n");
+//    assert(0);
     return nearest;
 }
 
@@ -437,6 +422,11 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
         }
     }
 
+//    printPair(p1);
+//    printPair(p2);
+//    printPair(p3);
+//    assert(0);
+
     return nearest;
 }
 
@@ -447,15 +437,15 @@ ssize_t readPair(FILE *file, Pair *pair) {
     char *line = NULL;
 
     if ((getline(&line, &size, file)) == -1) {
-        fprintf(stderr, "ONLY ZERO LINES!\n");
+//        fprintf(stderr, "ZERO LINES PRESENT IN CHILD!\n");
         return -1;
     }
     pair->p1 = getCoordinates(line);
     stored++;
 
     if ((getline(&line, &size, file)) == -1) {
-        fprintf(stderr, "ONLY ONE LINE!\n");
-        return -1;
+        fprintf(stderr, "ONE LINE PRESENT IN CHILD!\n");
+        return -2;
     }
     pair->p2 = getCoordinates(line);
     stored++;
