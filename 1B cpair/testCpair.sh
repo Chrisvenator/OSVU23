@@ -325,7 +325,7 @@ fi
 if [ "$EVERYTHING_CORRECT" == "false" ]; then
   echo -e "\n\n\nThere has been at least one error"
 else
-  echo -e "\n\n\nThere has been no errors. Good Job!"
+  echo -e "\n\n\nThere have been no errors. Good Job!"
 fi
 
 
