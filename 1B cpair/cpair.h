@@ -143,7 +143,7 @@ void remove_all_chars(char *str, char c);
  *
  * @param pair The Pair structure containing the two points to print.
  */
-void printPair(Pair pair);
+void printPair(FILE *output, Pair pair);
 
 /**
  * @brief Calculate the arithmetic mean of a coordinate (x or y) over a set of points.

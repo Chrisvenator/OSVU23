@@ -43,7 +43,7 @@ Pair newPair(Point p1, Point p2) {
         p.p1 = p1;
         p.p2 = p2;
     } else if (p1.x == p2.x) {
-        if (p1.y <= p2.y) {
+        if (p1.y < p2.y) {
             p.p1 = p1;
             p.p2 = p2;
         } else {
@@ -194,11 +194,11 @@ Point getCoordinates(char *string) {
     return point;
 }
 
-void printPair(Pair pair) {
+void printPair(FILE *output, Pair pair) {
     if ((pair.p1.x < pair.p2.x) || (pair.p1.x == pair.p2.x && pair.p1.y < pair.p2.y)) {
-        fprintf(stdout, "%.3f %.3f\n%.3f %.3f\n", pair.p1.x, pair.p1.y, pair.p2.x, pair.p2.y);
+        fprintf(output, "%.3f %.3f\n%.3f %.3f\n", pair.p1.x, pair.p1.y, pair.p2.x, pair.p2.y);
     } else {
-        fprintf(stdout, "%.3f %.3f\n%.3f %.3f\n", pair.p2.x, pair.p2.y, pair.p1.x, pair.p1.y);
+        fprintf(output, "%.3f %.3f\n%.3f %.3f\n", pair.p2.x, pair.p2.y, pair.p1.x, pair.p1.y);
     }
 }
 
@@ -232,7 +232,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     if (ret == -1) {
         perror("ERROR in select in loadData()");
     } else if (ret == 0) {
-        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin2.txt", "r");
+        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
         if (input == NULL) {
             perror("Error opening file");
             assert(0);
@@ -393,15 +393,10 @@ Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
     pair3.dist = getPairDistance(pair3);
     pair4.dist = getPairDistance(pair4);
 
-    Pair nearest = pair3;
+    Pair nearest = p1;
+    if (pair3.dist < nearest.dist) nearest = pair3;
     if (pair4.dist < nearest.dist) nearest = pair4;
 
-//    printPair(p1);
-//    printPair(pair3);
-//    printPair(pair4);
-//    printPair(nearest);
-//    fprintf(stdout, "\n");
-//    assert(0);
     return nearest;
 }
 
@@ -422,9 +417,9 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
         }
     }
 
-//    printPair(p1);
-//    printPair(p2);
-//    printPair(p3);
+//    printPair(stderr, p1);
+//    printPair(stderr, p2);
+//    printPair(stderr, p3);
 //    assert(0);
 
     return nearest;

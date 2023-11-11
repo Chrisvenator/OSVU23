@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     //TODO: THIS:
     if (findClosestPair(points, &myNumberOfElements, leftPipe, rightPipe) == false) {
-        printf("failed\n");
+//        fprintf(stderr, "failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -47,7 +47,6 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     switch (numberOfElements) {
         case 0:
             free(points);
-            assert(0);
             return false;
             break;
         case 1:
@@ -56,7 +55,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
             break;
         case 2: {
             Pair p = newPair(points[0], points[1]);
-            printPair(p);
+            printPair(stdout, p);
             free(points);
             return true;
             break;
@@ -71,7 +70,7 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
         p.p2 = points[0];
         p.dist = 0;
 
-        printPair(p);
+        printPair(stdout, p);
         free(points);
         return true;
     }
@@ -166,6 +165,8 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     double mean = calculateArithmeticMean(points, useXorY, numberOfElements);
     size_t index = getIndexOfMean(points, mean, numberOfElements, useXorY);
 
+
+//    fprintf(stderr, "Mean: %.3f\n", mean);
 //    fprintf(stderr, "left size: %zu; right size: %zu\n", index, numberOfElements - index);
 
 
@@ -240,12 +241,10 @@ bool findClosestPair(Point *points, const size_t *n, int leftPipe[2], int rightP
     else
         assert(0); //TODO: close everything when coming here
 
-//    printf("Pair 3: %f\n", pair3.dist);
-//    printPair(pair3);
 
 
-
-    printPair(pairNearest);
+//    fprintf(stderr, "\nNearest Pair:\n");
+    printPair(stdout, pairNearest);
 
     //TODO: Close all pipes all the time!
     //TODO: keine exit() beutzen. Nur in main(); Sonst is es sehr einfach zu vergessen die pipes zu schlißen
