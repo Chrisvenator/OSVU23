@@ -34,6 +34,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #include <limits.h>
 #include <float.h>
