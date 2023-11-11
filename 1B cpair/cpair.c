@@ -182,10 +182,6 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     //    Close and flush unused pipes    //
     // ////////////////////////////////// //
 
-
-
-    free(smaller);
-    free(bigger);
     fflush(leftWrite);
     fflush(rightWrite);
     fclose(leftWrite);
@@ -251,7 +247,8 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     pairNearest = closestPairIncludingMeanProblem(points, *numberOfElements, pairNearest, mean, 'x');
     printPair(stdout, pairNearest);
 
-
+    free(smaller);
+    free(bigger);
     //Everything (except points) SHOULD be closed or freed when coming here...
     return true;
 }
