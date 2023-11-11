@@ -184,28 +184,28 @@ Point *loadData(size_t *ptr_numberOfElements) {
 
     FILE *input = stdin;
 
-    fd_set set;
-    struct timeval timeout;
-
-    // Initialize the file descriptor set
-    FD_ZERO(&set);
-    FD_SET(STDIN_FILENO, &set); // STDIN_FILENO is 0
-
-    // Initialize the timeout data structure
-    timeout.tv_sec = 0;  // 0 seconds
-    timeout.tv_usec = 0; // 0 microseconds
-
-    // Check if stdin has input
-    int ret = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
-    if (ret == -1) {
-        perror("ERROR in select in loadData()");
-    } else if (ret == 0) {
-        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
-        if (input == NULL) {
-            perror("Error opening file");
-            assert(0);
-        }
-    }
+//    fd_set set;
+//    struct timeval timeout;
+//
+//    // Initialize the file descriptor set
+//    FD_ZERO(&set);
+//    FD_SET(STDIN_FILENO, &set); // STDIN_FILENO is 0
+//
+//    // Initialize the timeout data structure
+//    timeout.tv_sec = 0;  // 0 seconds
+//    timeout.tv_usec = 0; // 0 microseconds
+//
+//    // Check if stdin has input
+//    int ret = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
+//    if (ret == -1) {
+//        perror("ERROR in select in loadData()");
+//    } else if (ret == 0) {
+//        input = fopen("/home/junioradmin/CLionProjects/OSVU23/1B cpair/stdin.txt", "r");
+//        if (input == NULL) {
+//            perror("Error opening file");
+//            assert(0);
+//        }
+//    }
 
 
     size_t capacity = 2;
