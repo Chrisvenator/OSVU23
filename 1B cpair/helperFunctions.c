@@ -1,4 +1,11 @@
-#include <sys/select.h>
+/**
+ * @file cpair.c
+ * @brief collection functions for cpair.c
+ * @details This file implements functions defined in cpair.h
+ *          I split it into multiple files so that the main file is easier to read
+ * @author Christopher Scherling 12119060
+ * @date 11.11.2023
+ */
 
 void usage(void) {
     fprintf(stderr, "USAGE: %s\n", programName);
@@ -21,8 +28,7 @@ struct Process {
     int writePipe[2]; // Write pipe (file descriptors)
 };
 
-// Function to initialize a Process struct
-bool initProcess(Process *process) {
+static bool initProcess(Process *process) {
     process->pid = -1; // Initialize PID to an invalid value
     if (pipe(process->readPipe) == -1 ||
         pipe(process->writePipe) == -1) {
@@ -33,15 +39,14 @@ bool initProcess(Process *process) {
     return true;
 }
 
-// Function to clean up and close pipes for a Process struct
-void cleanupProcess(Process *process) {
+static void cleanupProcess(Process *process) {
     close(process->readPipe[0]);  // Close read pipe input
     close(process->readPipe[1]);  // Close read pipe output
     close(process->writePipe[0]); // Close write pipe input
     close(process->writePipe[1]); // Close write pipe output
 }
 
-Pair newPair(Point p1, Point p2) {
+static Pair newPair(Point p1, Point p2) {
     Pair p;
 
     if (p1.x < p2.x) {
@@ -64,7 +69,7 @@ Pair newPair(Point p1, Point p2) {
     return p;
 }
 
-bool is_float(char *str) {
+static bool is_float(char *str) {
     char *endptr;
     errno = 0;  // To distinguish success/failure after the call to strtod
 
@@ -80,7 +85,7 @@ bool is_float(char *str) {
     return true;
 }
 
-void remove_all_chars(char *str, char c) {
+static void remove_all_chars(char *str, char c) {
     char *pr = str, *pw = str;
     while (*pr) {
         *pw = *pr++;
@@ -89,17 +94,17 @@ void remove_all_chars(char *str, char c) {
     *pw = '\0';
 }
 
-double distance(struct Point p1, struct Point p2) {
+static double distance(struct Point p1, struct Point p2) {
     float dx = p1.x - p2.x;
     float dy = p1.y - p2.y;
     return sqrtf(dx * dx + dy * dy);
 }
 
-double getPairDistance(Pair pair) {
+static double getPairDistance(Pair pair) {
     return distance(pair.p1, pair.p2);
 }
 
-int compareX(const void *a, const void *b) {
+static int compareX(const void *a, const void *b) {
     Point *p1 = (Point *) a;
     Point *p2 = (Point *) b;
     if (p1->x < p2->x) return -1;
@@ -107,8 +112,7 @@ int compareX(const void *a, const void *b) {
     return 0;
 }
 
-
-int compareY(const void *a, const void *b) {
+static int compareY(const void *a, const void *b) {
     Point *p1 = (Point *) a;
     Point *p2 = (Point *) b;
     if (p1->y < p2->y) return -1;
@@ -116,7 +120,7 @@ int compareY(const void *a, const void *b) {
     return 0;
 }
 
-double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements) {
+static double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements) {
     //I don't need to check if the points are NULL or numberOfElements is 0, because it wouldn't come this far
 
     double mean = 0;
@@ -128,8 +132,7 @@ double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfEl
     return (mean / numberOfElements);
 }
 
-
-Point getCoordinates(char *string, int *status) {
+static Point getCoordinates(char *string, int *status) {
     int amountOfSpaces = 0;
     float x;
     float y;
@@ -174,7 +177,7 @@ Point getCoordinates(char *string, int *status) {
     return point;
 }
 
-void printPair(FILE *output, Pair pair) {
+static void printPair(FILE *output, Pair pair) {
     if ((pair.p1.x < pair.p2.x) || (pair.p1.x == pair.p2.x && pair.p1.y < pair.p2.y)) {
         fprintf(output, "%.3f %.3f\n%.3f %.3f\n", pair.p1.x, pair.p1.y, pair.p2.x, pair.p2.y);
     } else {
@@ -182,13 +185,13 @@ void printPair(FILE *output, Pair pair) {
     }
 }
 
-void printPointPointer(FILE *file, Point *points, size_t size) {
+static void printPointPointer(FILE *file, Point *points, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         fprintf(file, "%.3f %.3f\n", points[i].x, points[i].y);
     }
 }
 
-Point *loadData(size_t *ptr_numberOfElements) {
+static Point *loadData(size_t *ptr_numberOfElements) {
 
 
     size_t capacity = 2;
@@ -204,7 +207,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     size_t i = 0; //<-- Count how many elements there have been
 
     while (getline(&line, &size, stdin) >= 0) {
-        if (strcmp(line, "\n") == 0) continue; //TODO: strncmp
+        if (strncmp(line, "\n", strlen(line)) == 0) continue;
         if (i >= capacity) { // check if we need to increase the size of the array
             capacity *= 2;
 
@@ -239,8 +242,7 @@ Point *loadData(size_t *ptr_numberOfElements) {
     return points;
 }
 
-
-bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements) {
+static bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         fprintf(stderr,
                 "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
@@ -260,7 +262,7 @@ bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements) {
     return true; // If we've checked all and none differed, they are all the same
 }
 
-bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
+static bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         // Handle invalid input
         fprintf(stderr, "Invalid input: points is NULL or numberOfElements is 0.\n");
@@ -274,8 +276,7 @@ bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
     return true;
 }
 
-
-size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
+static size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
     for (size_t i = 0; i < size; ++i) {
         if ((c == 'x' && mean <= points[i].x) ||
             (c == 'y' && mean <= points[i].y))
@@ -286,8 +287,7 @@ size_t getIndexOfMean(Point *points, double mean, size_t size, char c) {
     return size - 1;
 }
 
-
-Point *dividePoints(Point *points, int *status, size_t start, size_t end) {
+static Point *dividePoints(Point *points, int *status, size_t start, size_t end) {
     size_t numPoints = end - start;
     Point *newPoints = malloc(numPoints * sizeof(Point));
     if (newPoints == NULL) {
@@ -303,7 +303,7 @@ Point *dividePoints(Point *points, int *status, size_t start, size_t end) {
     return newPoints;
 }
 
-Pair newPairFromTwoPairs(Pair p1, Pair p2) {
+static Pair newPairFromTwoPairs(Pair p1, Pair p2) {
     Pair pair3 = newPair(p1.p1, p2.p1);
     Pair pair4 = newPair(p1.p2, p2.p2);
     Pair pair5 = newPair(p1.p1, p2.p2);
@@ -323,8 +323,7 @@ Pair newPairFromTwoPairs(Pair p1, Pair p2) {
     return nearest;
 }
 
-Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
-//    fprintf(stderr, "Point: %f %f\n", p.x, p.y);
+static Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
     Pair pair3 = newPair(p1.p1, p);
     Pair pair4 = newPair(p1.p2, p);
 
@@ -338,7 +337,7 @@ Pair newPairFromOnePairAndOnePoint(Pair p1, Point p) {
     return nearest;
 }
 
-Pair nearestPair(Pair p1, Pair p2, Pair p3) {
+static Pair nearestPair(Pair p1, Pair p2, Pair p3) {
     Pair nearest = p1;
     if (p2.dist < nearest.dist) nearest = p2;
     if (p3.dist < nearest.dist) nearest = p3;
@@ -360,7 +359,7 @@ Pair nearestPair(Pair p1, Pair p2, Pair p3) {
 
 // if this function returns -1, then there has been nothing returned from the child process. Which is ok.
 // If this function returns -2, then something has gone wrong. See stderr for details:
-ssize_t readPair(FILE *file, Pair *pair) {
+static ssize_t readPair(FILE *file, Pair *pair) {
     ssize_t stored = 0;
     size_t size = 0;
     char *line = NULL;
@@ -399,15 +398,14 @@ ssize_t readPair(FILE *file, Pair *pair) {
     return stored;
 }
 
-
-void checkFile(FILE *file, int *status, const char *description) {
+static void checkFile(FILE *file, int *status, const char *description) {
     if (file == NULL) {
         fprintf(stderr, "%s", description);  // Print error message
         *status = EXIT_FAILURE;
     }
 }
 
-Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
+static Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
     Pair p;
     p.p1 = points[0];
     p.p2 = points[1];
@@ -428,7 +426,7 @@ Pair calculateNearestPointsBruteForce(Point *points, size_t size) {
     return p;
 }
 
-Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pair nearestPair, double mean, char axis) {
+static Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pair nearestPair, double mean, char axis) {
     double delta = nearestPair.dist;
     if (numberOfElements < 2) return nearestPair;
 
@@ -462,7 +460,7 @@ Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pai
         }
     }
 
-    if (position < 2){
+    if (position < 2) {
         free(pointsCloseToMean);
         return nearestPair;
     }

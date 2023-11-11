@@ -1,20 +1,17 @@
+/**
+ * @file cpair.c
+ * @brief A program which searches for the closest pair of points1 in a set of 2D-points.
+ * @details The program takes an array of 2D points as input.
+ *          The input is read from stdin. Each line consists of two floating point numbers,
+ *          separated by whitespace, which represent the x and y coordinates of one point.
+ * @author Christopher Scherling 12119060
+ * @date 11.11.2023
+ */
+
 #include "cpair.h"
 #include "helperFunctions.c" //TODO: ABSOLUTELY REMOVE THIS LINE!!!!!!
 
-/**
- * @file
- * @brief
- * @details
- * @note
- * @example
- * @param argc
- * @param argv
- * @return
- * @author Christopher Scherling 12119060 :)
- * @date
- */
 int main(int argc, char *argv[]) {
-    //TODO: Make every method static
     //TODO: Error messages shall be written to stderr and should contain the program name argv[0].
 
     programName = argv[0];
@@ -239,7 +236,7 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     } else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair1, bigger[0]);
     else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair2, smaller[0]);
     else
-        return false; //TODO: close everything when coming here
+        return false;
 
 
 
@@ -254,7 +251,6 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     printPair(stdout, pairNearest);
 
 
-    //TODO: Close all pipes all the time!
     //Everything (except points) SHOULD be closed or freed when coming here...
     return true;
 }

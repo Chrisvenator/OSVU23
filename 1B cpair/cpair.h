@@ -27,19 +27,23 @@ char *programName;
 //size_t numberOfElements;
 
 /**
- * @brief Structure to represent a point in 2D space.
+ * @brief Struct to represent a point in 2D space.
  *
  * @details
- * This structure is used to hold the coordinates of a point in a two-dimensional
- * plane. Each point is defined by a pair of floating-point numbers representing
- * its horizontal (x) and vertical (y) positions.
- *
- * @note This structure can be extended to represent points in higher-dimensional
- * space by adding more members, such as 'z' for a three-dimensional space.
+ * This struct is used to hold the coordinates of a point in a two-dimensional
+ * plane.
+ * @details Each point is defined by a pair of floating-point numbers representing
+ * its horizontal (x) and vertical (y) positions
  */
 typedef struct Point Point;
 
-//TODO: comment
+/**
+ * @brief Structure to represent a process with associated pipes for IPC (Inter-Process Communication).
+ * @details This structure encapsulates the details of a process, including its process ID and file descriptors
+ *          for read and write pipes. It is designed to facilitate IPC between processes, typically between
+ *          a parent and its forked children. The readPipe is used for reading data sent by another process,
+ *          and the writePipe is used for sending data to another process.
+ */
 typedef struct Process Process;
 
 /**
@@ -61,13 +65,13 @@ typedef struct Pair Pair;
  * @details This function assumes the input string contains two float numbers separated by a space.
  * It will parse the string, validate and convert the two numbers into a Point structure.
  * If the input is not in the correct format or does not contain exactly two floats,
- * the program will print an error message and terminate.
+ * the program will set the status pointer to EXIT_FAILURE and return an invalid Point
  * @param string A character array containing the two float numbers separated by a space.
  * It must be a null-terminated string and should not be NULL itself.
+ * @param status A pointer in which the status of the function is being saved. It will be either EXIT_SUCCESS or EXIT_FAILURE
  * @return A Point structure with the first number as the x-coordinate and the second number as the y-coordinate.
- * If the function fails to parse the string or encounters an error, it will not return; instead, it will terminate the program.
  */
-Point getCoordinates(char *string, int *status);
+static Point getCoordinates(char *string, int *status);
 
 /**
  * @brief Function to compute the Euclidean distance between two points.
@@ -75,23 +79,23 @@ Point getCoordinates(char *string, int *status);
  * @param p2 The second point as a Point structure.
  * @return The Euclidean distance as a double.
  */
-double distance(struct Point p1, struct Point p2);
+static double distance(struct Point p1, struct Point p2);
 
 /**
  * same as distance
  */
-double getPairDistance(Pair pair);
+static double getPairDistance(Pair pair);
 
 /**
  * @brief Prints the usage information for the program and exits.
- * This function is typically called when the program is invoked with incorrect arguments.
+ * @details This function is typically called when the program is invoked with incorrect arguments.
  * It will print the correct usage format of the program to the standard error and then exit
  * with EXIT_FAILURE to indicate that the program has terminated unsuccessfully.
  */
 void usage(void);
 
 /**
- * @brief Loads point data from stdin into a dynamically allocated array.
+ * @brief Reads point data from standard input and loads it into a dynamically allocated array.
  * @details This function reads point data from stdin, expecting each line to contain
  * a pair of float numbers representing coordinates. It dynamically allocates an array
  * to store the points and resizes it as needed.
@@ -99,8 +103,9 @@ void usage(void);
  * is dynamically allocated and must be freed by the caller. The function will terminate
  * the program if stdin opening fails, memory allocation fails, or reallocating memory fails.
  * @warning The user needs to free the array manually later!
+ * @param ptr_numberOfElements A pointer to a size_t variable where the number of elements read will be stored.
  */
-Point *loadData(size_t *ptr_numberOfElements);
+static Point *loadData(size_t *ptr_numberOfElements);
 
 /**
  * @brief Checks if the string is a valid representation of a float.
@@ -111,12 +116,12 @@ Point *loadData(size_t *ptr_numberOfElements);
  * - If the string starts with a space, it is not considered a valid float.<br>
  * - If there are any leftover non-numerical characters after the number.<br>
  * - If the value is out of the range of representable values of strtod, indicating an overflow or underflow.<br>
- * If any of these checks fail, the function returns 0, indicating the string is not a valid float. Otherwise,<br>
- * it returns 1, indicating the string is a valid float.
+ * If any of these checks fail, the function returns false, indicating the string is not a valid float. Otherwise,
+ * it returns true, indicating the string is a valid float.
  * @param str The input string to check for float representation.
- * @return Returns 1 if the string is a valid float, 0 otherwise.
+ * @return Returns true if the string is a valid float, false otherwise.
  */
-bool is_float(char *str);
+static bool is_float(char *str);
 
 /**
  * @brief remove_all_chars removes all occurrences c from string str
@@ -132,7 +137,7 @@ bool is_float(char *str);
  * @param str The input string from which the characters should be removed.
  * @param c character that should be removed
  */
-void remove_all_chars(char *str, char c);
+static void remove_all_chars(char *str, char c);
 
 /**
  * @brief Prints the coordinates of a Pair to standard output.
@@ -142,23 +147,21 @@ void remove_all_chars(char *str, char c);
  * The coordinates are printed with three decimal places of precision.
  *
  * @param pair The Pair structure containing the two points to print.
+ * @param output Output FILE pointer where the output should be printed
  */
-void printPair(FILE *output, Pair pair);
+static void printPair(FILE *output, Pair pair);
 
 /**
  * @brief Calculate the arithmetic mean of a coordinate (x or y) over a set of points.
  * @details This function calculates the arithmetic mean for the specified coordinate (x or y)
- *          of all points in the provided array. It includes error handling for null pointers
- *          and zero-element arrays.
+ *          of all points in the provided array.
  * @note The coordinate parameter should be 'x' for the x-coordinate mean and 'y' for the y-coordinate mean.
- *       If the points array is NULL or numberOfElements is zero, the function returns 0 and sets errno
- *       to EINVAL, indicating an invalid argument and prints to stderr.
  * @param points A pointer to the first element in an array of Point structs.
  * @param numberOfElements The number of elements in the points array.
  * @param coordinate A char indicating which coordinate to calculate the mean of ('x' or 'y').
  * @return The arithmetic mean as a double value, or 0 if an input error is detected.
  */
-double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements);
+static double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfElements);
 
 
 /**
@@ -169,7 +172,7 @@ double calculateArithmeticMean(Point *points, char coordinate, size_t numberOfEl
  * @param numberOfElements The number of elements in the points array.
  * @return A boolean value indicating whether all coordinates are the same (true) or not (false).
  */
-bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements);
+static bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements);
 
 
 /**
@@ -183,7 +186,7 @@ bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements);
  * @param points A pointer to the first element of an array of Point structures.
  * @return Returns true if all points in the array have the same x-coordinate, false otherwise.
  */
-bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements);
+static bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements);
 
 
 /**
@@ -203,7 +206,7 @@ bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements);
   *         point is found, respectively, to be less than, to match, or be greater than that of the
   *         second point.
   */
-int compareX(const void *a, const void *b);
+static int compareX(const void *a, const void *b);
 
 /**
   * @brief Comparator function for qsort that compares two points by their y-coordinate.
@@ -222,7 +225,7 @@ int compareX(const void *a, const void *b);
   *         point is found, respectively, to be less than, to match, or be greater than that of the
   *         second point.
   */
-int compareY(const void *a, const void *b);
+static int compareY(const void *a, const void *b);
 
 /**
  * @brief Divides the array of points into a new array containing points in the specified range.
@@ -234,7 +237,7 @@ int compareY(const void *a, const void *b);
  * @param end The ending index (exclusive) for the division.
  * @return A pointer to of all elements from points from start to end
  */
-Point *dividePoints(Point *points, int *status, size_t start, size_t end);
+static Point *dividePoints(Point *points, int *status, size_t start, size_t end);
 
 /**
  * @brief Gets the index of the first point whose coordinate is greater than or equal to the mean.
@@ -248,16 +251,146 @@ Point *dividePoints(Point *points, int *status, size_t start, size_t end);
  * @return The index of the first point with the specified coordinate greater than or equal to mean,
  *         or the last index if no such point is found.
  */
-size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
+static size_t getIndexOfMean(Point *points, double mean, size_t size, char c);
 
 
 static bool findClosestPair(Point *points, const size_t *n);
 
-Pair newPairFromTwoPairs(Pair p1, Pair p2);
+/**
+ * @brief Creates a new Pair from the closest combination of points in two given Pairs.
+ * @details This function takes two Pairs as input and creates four new Pairs by combining their points.
+ *          It then calculates the distances between the points in each of these new Pairs. The function
+ *          returns the Pair that has the shortest distance between its points, effectively identifying the
+ *          closest pair of points from the four possible combinations.
+ * @param p1 The first Pair of points.
+ * @param p2 The second Pair of points.
+ * @return The Pair from the combined points of p1 and p2 that has the shortest distance between its points.
+ */
+static Pair newPairFromTwoPairs(Pair p1, Pair p2);
 
-Pair nearestPair(Pair p1, Pair p2, Pair p3);
+/**
+ * @brief Finds the nearest pair among three given pairs.
+ * @details Compares three pairs of points and determines which pair has the shortest distance
+ *          between its points.
+ * @param p1 The first pair of points to consider.
+ * @param p2 The second pair of points to consider.
+ * @param p3 The third pair of points to consider.
+ * @return The nearest pair among the three input pairs.
+ */
+static Pair nearestPair(Pair p1, Pair p2, Pair p3);
 
-Pair newPair(Point p1, Point p2);
+/**
+ * @brief Creates a new Pair structure from two Point structures.
+ * @details This function takes two Point structures and orders them into a new Pair.
+ *          The points in the pair are ordered primarily by their x-coordinates, and
+ *          secondarily by their y-coordinates. This ensures that the point with the
+ *          smaller x-coordinate (or y-coordinate if x-coordinates are equal) becomes p1,
+ *          and the other point becomes p2 in the Pair structure. The distance between
+ *          the two points is also calculated and stored in the Pair.
+ * @param p1 The first Point structure.
+ * @param p2 The second Point structure.
+ * @return A Pair structure containing the two points in the specified order and their distance.
+ */
+static Pair newPair(Point p1, Point p2);
 
+/**
+ * @brief Prints an array of Point structures to a specified file stream.
+ * @details Iterates through an array of Point structures and prints each point's coordinates
+ *          to the specified file stream. The coordinates are formatted to three decimal places
+ *          and each point is printed on a new line.
+ * @param file A pointer to a FILE structure where the points will be printed.
+ *             This could be a file or standard output/error streams.
+ * @param points A pointer to the first element of an array of Point structures.
+ * @param size The number of Point elements in the array.
+ */
+static void printPointPointer(FILE *file, Point *points, size_t size);
+
+/**
+ * @brief Creates a new Pair from a given Pair and an additional Point.
+ * @details This function takes a Pair and a single Point as input and creates two new Pairs
+ *          by combining the given Point with each point of the input Pair. It then calculates
+ *          the distances between the points in these new Pairs. The function returns the Pair
+ *          that has the shortest distance between its points, effectively identifying the closest
+ *          pair of points from the two possible combinations.
+ * @param p1 The initial Pair of points.
+ * @param p An additional Point to be paired with each point of the initial Pair.
+ * @return The Pair from the combinations of p1 and p that has the shortest distance between its points.
+ */
+static Pair newPairFromOnePairAndOnePoint(Pair p1, Point p);
+
+/**
+ * @brief Reads and constructs a Pair from two lines of input from a file stream.
+ * @details This function attempts to read two lines from a given file stream, converting each line
+ *          into a Point structure using the `getCoordinates` function, and then constructs a Pair
+ *          from these two points. It also calculates the distance between these points. The function
+ *          returns the number of lines successfully read and processed. It handles partial or failed
+ *          reads by returning specific error codes.
+ * @param file A FILE pointer to the file stream from which the lines are to be read.
+ * @param pair A pointer to a Pair structure where the read points and their distance will be stored.
+ * @return The number of lines successfully read and processed (should be 2 for a valid pair).
+ *         Returns -1 if there is no line to read (EOF or empty stream), indicating that no data
+ *         was returned from the child process. Returns -2 in case of an error, with a message
+ *         printed to stderr for partial reads or other failures.
+ */
+static ssize_t readPair(FILE *file, Pair *pair);
+
+/**
+ * @brief Checks the validity of a file pointer and updates status accordingly.
+ * @details This function examines a file pointer to determine if it is NULL. If the file pointer is NULL,
+ *          indicating that the file failed to open or is otherwise invalid, the function prints an
+ *          error message and updates the status to indicate failure.
+ * @param file A FILE pointer to be checked.
+ * @param status A pointer to an integer where the status of the check will be stored.
+ *               Status is set to EXIT_FAILURE if the file pointer is NULL.
+ * @param description A string describing the error, which will be printed if the file pointer is NULL.
+ */
+static void checkFile(FILE *file, int *status, const char *description);
+
+/**
+ * @brief Calculates the closest pair of points using a brute-force approach.
+ * @details This function iterates through all pairs of points in the given array to find the pair
+ *          with the smallest distance between them. It uses a brute-force approach, comparing each pair
+ *          of points, which makes it straightforward but potentially inefficient for large datasets.
+ *          This method is typically effective for small to moderately sized arrays of points.
+ * @param points An array of Point structures to be examined.
+ * @param size The number of elements in the points array.
+ * @return A Pair structure containing the two closest points and their distance.
+ */
+static Pair calculateNearestPointsBruteForce(Point *points, size_t size);
+
+
+/**
+ * @brief Finds the closest pair of points, considering points close to a given mean.
+ * @details This function examines a subset of points that are within a certain distance (delta)
+ *          from a specified mean value. It uses a brute-force approach to find the closest pair
+ *          within this subset.
+ * @param points An array of Point structures to be examined.
+ * @param numberOfElements The number of elements in the points array.
+ * @param nearestPair The currently identified nearest pair from previous computations.
+ * @param mean The mean value (x or y coordinate) around which to search for close points.
+ * @param axis The axis ('x' or 'y') relative to which the mean value is defined.
+ * @return The closest pair of points either in the given subset or the previously identified nearest pair.
+ */
+static Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElements, Pair nearestPair, double mean, char axis);
+
+/**
+ * @brief Cleans up and closes the pipes for a Process struct.
+ * @details This function is responsible for closing the file descriptors associated with both the read and write pipes of a Process struct.
+ *          It ensures that all ends of both pipes are properly closed to prevent resource leaks. This is a crucial step in the lifecycle
+ *          management of processes and their associated inter-process communication channels.
+ * @param process Pointer to the Process struct whose resources are to be cleaned up.
+ */
+static void cleanupProcess(Process *process);
+
+/**
+ * @brief Initializes a Process struct by setting up its pipes.
+ * @details This function is responsible for initializing a Process struct. It sets the process ID (pid) to an invalid
+ *          value (-1) and creates two pipes: one for reading and one for writing. The pipes are used for inter-process
+ *          communication, typically between a parent process and its child process.
+ * @param process Pointer to the Process struct that needs to be initialized.
+ * @return Returns `true` if both pipes are successfully created, `false` otherwise. If false is returned,
+ *         an error message is printed indicating the failure to create the pipes.
+ */
+static bool initProcess(Process *process);
 
 #endif //OSVU23_CPAIR_H
