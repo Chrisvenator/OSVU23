@@ -12,16 +12,13 @@
 #include "helperFunctions.c" //TODO: ABSOLUTELY REMOVE THIS LINE!!!!!!
 
 int main(int argc, char *argv[]) {
-    //TODO: Error messages shall be written to stderr and should contain the program name argv[0].
-
     programName = argv[0];
-    if (argc != 1) usage(); //If the wrong number of arguments have been passed, throw an error
+    if (argc != 1) usage();
 
-    size_t myNumberOfElements;
+    size_t myNumberOfElements; //Don't question this. Never touch a running system :)
     size_t *ptr_numberOfElements = &myNumberOfElements;
 
     Point *points = loadData(ptr_numberOfElements);
-
 
 
     if (findClosestPair(points, &myNumberOfElements) == false) {
@@ -75,7 +72,7 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
 
     switch (processLeft.pid = fork()) {
         case -1:
-            fprintf(stderr, "Cannot fork!\n");
+            fprintf(stderr, "[%s]Cannot fork!\n", programName);
             return false;
             break;
         case 0: //We are now in the first child element
@@ -102,7 +99,7 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
 
     switch (processRight.pid = fork()) {
         case -1:
-            fprintf(stderr, "Cannot fork!\n");
+            fprintf(stderr, "[%s]Cannot fork!\n", programName);
             return false;
             break;
         case 0: //We are now in the first child element
@@ -127,9 +124,11 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
             break;
     }
 
-    // ///////////////////////////////// //
-    // Open pipes to read and write from //
-    // ///////////////////////////////// //
+
+
+    // ////////////////////////////////////// //
+    //   Open pipes to read and write from    //
+    // ////////////////////////////////////// //
 
     int status = EXIT_SUCCESS;
     FILE *leftWrite = fdopen(processLeft.writePipe[1], "w");
@@ -144,6 +143,7 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     checkFile(rightRead, &status, "Error opening rightRead");
 
 
+
     // /////////////////////////////////////////////////////////////////////// //
     // Calculate Mean, sort points, divide them and write them to the children //
     // /////////////////////////////////////////////////////////////////////// //
@@ -151,14 +151,14 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     //Check if all x-coordinates have the same Value. If yes, then use y-coordinates to proceed
     char useXorY = checkIfAllXValuesAreTheSame(points, *numberOfElements) == true ? 'y' : 'x';
 
-    //sort, mean, index:
+    //sort, then calculate mean and index:
     qsort(points, (size_t) *numberOfElements, sizeof(Point), useXorY == 'x' ? compareX : compareY);
     double mean = calculateArithmeticMean(points, useXorY, *numberOfElements);
     size_t index = getIndexOfMean(points, mean, *numberOfElements, useXorY);
 
 
-    Point *smaller = dividePoints(points, &status, 0, index);
-    Point *bigger = dividePoints(points, &status, index, *numberOfElements);
+    Point *smaller = dividePoints(points, &status, 0, index); //All points that are smaller than mean
+    Point *bigger = dividePoints(points, &status, index, *numberOfElements); //All points that are bigger than mean
 
     //If an error occurred, the free and close everything
     if (status != EXIT_SUCCESS) {
@@ -174,18 +174,16 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
         return false;
     }
 
+    //give all points (smaller and bigger than mean) to their respective children
     printPointPointer(leftWrite, smaller, index);
     printPointPointer(rightWrite, bigger, *numberOfElements - index);
 
 
-    // ////////////////////////////////// //
-    //    Close and flush unused pipes    //
-    // ////////////////////////////////// //
 
+    // ////////////////////////////////////// //
+    //      Close and flush unused pipes      //
+    // ////////////////////////////////////// //
 
-
-    free(smaller);
-    free(bigger);
     fflush(leftWrite);
     fflush(rightWrite);
     fclose(leftWrite);
@@ -201,17 +199,17 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     close(processRight.readPipe[1]);
 
     if (status != EXIT_SUCCESS) {
-        printf("dead child\n");
+        fprintf(stderr, "[%s]dead child\n", programName);
         fclose(leftRead);
         fclose(rightRead);
         return false;
     }
 
 
+
     // ////////////////////////////////// //
     // Read the answers from the children //
     // ////////////////////////////////// //
-
 
     Pair pair1, pair2;
     ssize_t leftReadAmount = readPair(leftRead, &pair1);
@@ -220,37 +218,45 @@ static bool findClosestPair(Point *points, const size_t *numberOfElements) {
     fclose(leftRead);
     fclose(rightRead);
 
-    Pair pair3;
+
 
 
     // /////////////////////////////////// //
     // Validate the answers and compute P3 //
     // /////////////////////////////////// //
 
+    Pair pair3;
 
-    if (leftReadAmount == (size_t) -2 || rightReadAmount == (size_t) -2) return false;
+    if (leftReadAmount == (size_t) -2 || rightReadAmount == (size_t) -2) return false; //Something went wrong while reading from the children
 
     Pair pairNearest;
-    if (leftReadAmount != (size_t) -1 && rightReadAmount != (size_t) -1) {
+    if (leftReadAmount != (size_t) -1 && rightReadAmount != (size_t) -1) { //Both children returned something = There was a pair for left and right
         pair3 = newPairFromTwoPairs(pair1, pair2);
         pairNearest = nearestPair(pair1, pair2, pair3);
-    } else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair1, bigger[0]);
-    else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair2, smaller[0]);
-    else
-        return false;
+    } else if (leftReadAmount != (size_t) -1 && rightReadAmount == (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair1, bigger[0]);//Only one child returned something = There was only a pair
+    else if (leftReadAmount == (size_t) -1 && rightReadAmount != (size_t) -1) pairNearest = newPairFromOnePairAndOnePoint(pair2, smaller[0]);//Only one child returned something = There was only a pair
+    else {//If there was no pair. This case should normally not be possible because 2 points shouldn't normally be split anymore
+        fprintf(stderr, "[%s]A pair got split up", programName);
+        free(smaller);
+        free(bigger);
+        free(points);
+        assert(0);
+    }
 
 
 
 
-    // //////////////////////////////////////////////////////// //
-    // Compute the rare case that the recursion is not perfect. //
-    //                    Print nearest pair                    //
-    // //////////////////////////////////////////////////////// //
+    // /////////////////////////////////////////////////////// //
+    // Compute the rare case that the recursion is not perfect //
+    //             and then print nearest pair                 //
+    // /////////////////////////////////////////////////////// //
 
 
     pairNearest = closestPairIncludingMeanProblem(points, *numberOfElements, pairNearest, mean, 'x');
     printPair(stdout, pairNearest);
 
+    free(smaller);
+    free(bigger);
 
     //Everything (except points) SHOULD be closed or freed when coming here...
     return true;

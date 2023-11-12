@@ -2,9 +2,8 @@
  * @author Christopher Scherling
  * @file cpair.h
  * @date 01.11.2023
- * @brief header of cpair. Defines structs and includes
- * @details defines macros, which are used as indices for the pipes @see cpair.c.
- * Furthermore, structs for storing points and pair of points are defined.
+ * @brief header of cpair. Defines all structs, functions and comments
+ * @details defines macros, structs and functions. This is the file in which all comments are written
  **/
 #ifndef OSVU23_CPAIR_H
 #define OSVU23_CPAIR_H

@@ -6,9 +6,10 @@
  * @author Christopher Scherling 12119060
  * @date 11.11.2023
  */
+#include <sys/select.h>
 
 void usage(void) {
-    fprintf(stderr, "USAGE: %s\n", programName);
+    fprintf(stderr, "[%s]USAGE: %s\n", programName, programName);
     exit(EXIT_FAILURE);
 }
 
@@ -245,9 +246,7 @@ static Point *loadData(size_t *ptr_numberOfElements) {
 
 static bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
-        fprintf(stderr,
-                "\nThere has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu",
-                points == NULL, numberOfElements);
+        fprintf(stderr, "\n[%s]There has been an error while calculating the arithmetic mean. Points == null : %d; number of elements: %zu", programName, points == NULL, numberOfElements);
         return false;
     }
 
@@ -266,7 +265,7 @@ static bool checkIfAllCoordinatesAreTheSame(Point *points, size_t numberOfElemen
 static bool checkIfAllXValuesAreTheSame(Point *points, size_t numberOfElements) {
     if (points == NULL || numberOfElements == 0) {
         // Handle invalid input
-        fprintf(stderr, "Invalid input: points is NULL or numberOfElements is 0.\n");
+        fprintf(stderr, "[%s]Invalid input: points is NULL or numberOfElements is 0.\n", programName);
         return false;
     }
 
@@ -292,7 +291,7 @@ static Point *dividePoints(Point *points, int *status, size_t start, size_t end)
     size_t numPoints = end - start;
     Point *newPoints = malloc(numPoints * sizeof(Point));
     if (newPoints == NULL) {
-        fprintf(stderr, "Memory allocation failed!\n");
+        fprintf(stderr, "[%s]Memory allocation failed!\n", programName);
         *status = EXIT_FAILURE;
         return newPoints;
     }
@@ -380,7 +379,7 @@ static ssize_t readPair(FILE *file, Pair *pair) {
     stored++;
 
     if ((getline(&line, &size, file)) == -1) {
-        fprintf(stderr, "ONE LINE PRESENT IN CHILD!\n");
+        fprintf(stderr, "[%s]ONLY ONE LINE PRESENT IN CHILD!\n", programName);
         free(line);
         return -2;
     }
@@ -401,7 +400,7 @@ static ssize_t readPair(FILE *file, Pair *pair) {
 
 static void checkFile(FILE *file, int *status, const char *description) {
     if (file == NULL) {
-        fprintf(stderr, "%s", description);  // Print error message
+        fprintf(stderr, "[%s]%s", programName, description);  // Print error message
         *status = EXIT_FAILURE;
     }
 }
@@ -435,7 +434,7 @@ static Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElemen
     Point *pointsCloseToMean = malloc(capacity * sizeof(Point));
     size_t position = 0;
     if (pointsCloseToMean == NULL) {
-        fprintf(stderr, "Failed to allocate memory");
+        fprintf(stderr, "[%s]Failed to allocate memory", programName);
         free(points);
         free(pointsCloseToMean);
         exit(EXIT_FAILURE);
@@ -446,7 +445,7 @@ static Pair closestPairIncludingMeanProblem(Point *points, size_t numberOfElemen
             capacity *= 2;
             Point *temp = (Point *) realloc(pointsCloseToMean, capacity * sizeof(Point));
             if (temp == NULL) {
-                fprintf(stderr, "Failed to reallocate memory");
+                fprintf(stderr, "[%s]Failed to reallocate memory", programName);
                 free(points);
                 free(pointsCloseToMean);
                 exit(EXIT_FAILURE);
