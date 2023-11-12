@@ -3,6 +3,10 @@
 - [1A MyCompress](#1a-mycompress)
 - [1B Closest Pair](#1b-closest-pair)
 
+
+- [contributing](#contributing)
+- [license](#license)
+
 ---
 
 # 1A MyCompress
@@ -132,14 +136,14 @@ brute force method for large datasets.
 
 ---
 
-## Contributing
+# Contributing
 
 Contributions to the project are welcome. Please follow the standard GitHub pull request process to submit your changes.
 
-## License
+# License
 
 Just don't copy and hand in this assignment. If you do something else with it, I don't care.
 
-## Author
+# Author
 
 Chrisvenator
