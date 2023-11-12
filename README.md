@@ -2,7 +2,7 @@
 
 - [1A MyCompress](#1a-mycompress)
 - [1B Closest Pair](#1b-closest-pair)
-- [contributing](#contributing)
+- [contributing](#contributing-1)
 - [license](#license)
 
 ---
