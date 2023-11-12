@@ -76,14 +76,6 @@ Contributions to improve MyCompress are welcome. Please follow these steps to co
 4. Push your changes to the branch.
 5. Create a pull request.
 
-## License
-
-Just don't copy and hand in this assignment. If you do something else with it, I don't care.
-
-## Author
-
-Chrisvenator
-
 
 ---
 
@@ -137,6 +129,8 @@ Input the points as instructed by the program, and it will output the closest pa
 
 The program uses a divide-and-conquer approach to find the closest pair of points, which is more efficient than the
 brute force method for large datasets.
+
+---
 
 ## Contributing
 
