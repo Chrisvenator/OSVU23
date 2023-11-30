@@ -18,39 +18,41 @@
 
 // tasks you shall implement (located below main function)
 void task_1(char *iban, char expr[MAX_TEXTLEN]);
+
 void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]);
+
 void task_3(int fd[2], char expr[MAX_TEXTLEN]);
 
 /******************************************************************************/
 
 int main(int argc, char *argv[]) {
     // reads the arguments
-    char *iban; /**< Pointer to the IBAN given as positional argument. */
+    char *iban = "ABCD1234"; /**< Pointer to the IBAN given as positional argument. */
     //read_arguments(argc, argv, &iban);
 
     // prepare expression (convert IBAN to integer)
     char expr[MAX_TEXTLEN]; /**< Expression for `./calc`. */
     task_1(iban, expr);
 
-    // setup pipe to communicate with the child process
-    int fd[2];
-    if (pipe(fd) < 0) {
-        error_exit("Creating pipe failed.");
-    }
-    // fork a child process (calls task_3)
-    char result[MAX_TEXTLEN]; /**< Result from the child process. */
-    task_2(fd, expr, result);
-
-    wait_for_child();
-
-    // print result
-    result[2] = '\0';
-    if ((strcmp(result, "1\n") == 0) || (strcmp(result, "1") == 0)) {
-        printf("valid\n");
-        exit(EXIT_SUCCESS);
-    }
-
-    printf("invalid\n");
+//    // setup pipe to communicate with the child process
+//    int fd[2];
+//    if (pipe(fd) < 0) {
+//        error_exit("Creating pipe failed.");
+//    }
+//    // fork a child process (calls task_3)
+//    char result[MAX_TEXTLEN]; /**< Result from the child process. */
+//    task_2(fd, expr, result);
+//
+//    wait_for_child();
+//
+//    // print result
+//    result[2] = '\0';
+//    if ((strcmp(result, "1\n") == 0) || (strcmp(result, "1") == 0)) {
+//        printf("valid\n");
+//        exit(EXIT_SUCCESS);
+//    }
+//
+//    printf("invalid\n");
     exit(EXIT_FAILURE);
 }
 
@@ -84,14 +86,24 @@ void task_1(char *iban, char expr[MAX_TEXTLEN]) {
     }
 
     int length = strlen(iban);
-    char *newban [length + 1];
+    char newban[length + 1];
 
-    memcpy(newban, iban + 4, length -4);
+    memcpy(newban, iban + 4, length - 4);
     memcpy(newban + length - 4, iban, 4);
     newban[length] = '\0';
-    printf("%s\n", newban);
-    sprintf(expr, "%d", newban - 55);
-    printf("%s\n", expr);
+    printf("newban: %s\n", newban);
+
+    int pos = 0;
+    for (int i = 0; i < length; ++i) {
+        if (isdigit(newban[i])) {
+            expr[pos++] = newban[i];
+        } else if (isalpha(newban[i])) {
+            sprintf(expr + pos, "%d", newban[i] - 55);
+            pos += 2;
+        } else assert(0);
+    }
+    expr[pos+1] = '\0';
+    printf("expr: %s\n", expr);
 
 }
 
@@ -116,12 +128,12 @@ void task_1(char *iban, char expr[MAX_TEXTLEN]) {
  */
 void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]) {
     pid_t pid = fork();
-    if (pid == -1){
+    if (pid == -1) {
         close(fd[0]);
         close(fd[1]);
         perror("Can't fork!");
         exit(EXIT_EFORK);
-    } else if (pid == 0){
+    } else if (pid == 0) {
         task_3(fd, expr);
         close(fd[0]);
         close(fd[1]);
@@ -129,13 +141,13 @@ void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]) {
     }
 
     int status = 0;
-    if (waitpid(pid, &status, 0) == -1 || status != 0 || WEXITSTATUS(status) != EXIT_SUCCESS){
+    if (waitpid(pid, &status, 0) == -1 || status != 0 || WEXITSTATUS(status) != EXIT_SUCCESS) {
         close(fd[0]);
         close(fd[1]);
         exit(EXIT_FAILURE);
     }
-    
-    
+
+
     read(fd[READ_END], result, MAX_TEXTLEN);
 
     close(fd[0]);
@@ -166,5 +178,5 @@ void task_3(int fd[2], char expr[MAX_TEXTLEN]) {
     dup2(fd[WRITE_END], STDOUT_FILENO);
     close(fd[WRITE_END]);
 
-    execl("./calc", "./calc", expr, (char *)NULL);
+    execl("./calc", "./calc", expr, (char *) NULL);
 }
