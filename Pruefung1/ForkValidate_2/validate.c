@@ -1,6 +1,5 @@
 #include "validate.h"
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -10,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <assert.h>
+#include <ctype.h>
 
 /******************************************************************************
  * Function declarations
@@ -17,15 +18,17 @@
 
 // tasks you shall implement (located below main function)
 void task_1(char *iban, char expr[MAX_TEXTLEN]);
+
 void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]);
+
 void task_3(int fd[2], char expr[MAX_TEXTLEN]);
 
 /******************************************************************************/
 
 int main(int argc, char *argv[]) {
     // reads the arguments
-    char *iban; /**< Pointer to the IBAN given as positional argument. */
-    read_arguments(argc, argv, &iban);
+    char *iban = "ABCD1234"; /**< Pointer to the IBAN given as positional argument. */
+    //read_arguments(argc, argv, &iban);
 
     // prepare expression (convert IBAN to integer)
     char expr[MAX_TEXTLEN]; /**< Expression for `./calc`. */
@@ -34,13 +37,13 @@ int main(int argc, char *argv[]) {
     // setup pipe to communicate with the child process
     int fd[2];
     if (pipe(fd) < 0) {
-        error_exit("Creating pipe failed.");
+        //error_exit("Creating pipe failed.");
     }
     // fork a child process (calls task_3)
     char result[MAX_TEXTLEN]; /**< Result from the child process. */
     task_2(fd, expr, result);
 
-    wait_for_child();
+    //wait_for_child();
 
     // print result
     result[2] = '\0';
@@ -77,35 +80,7 @@ int main(int argc, char *argv[]) {
  * @param expr The expression for `./calc`.
  */
 void task_1(char *iban, char expr[MAX_TEXTLEN]) {
-    printf("input: %s\n", iban);
-    if (strlen(iban) < 5) {
-        usage();
-    }
-
-    // write into tmp in flipped order
-    char tmp[strlen(iban) + 1];
-    const size_t remainderLen = strlen(iban) - 4/* code */;
-    memcpy(tmp, iban + 4, remainderLen);  // first four
-    memcpy(tmp + remainderLen, iban, 4);  // remainder
-    tmp[strlen(iban)] = '\0';
-    printf("tmp: %s\n", tmp);
-
-    // convert chars to digits, write into expr
-    size_t expInd = 0;
-    for (size_t i = 0; i < strlen(tmp); i++) {
-        if (isdigit(tmp[i])) {
-            expr[expInd++] = tmp[i];
-
-        } else if (isalpha(tmp[i])) {
-            sprintf(expr + expInd, "%d", tmp[i] - 55);
-            expInd += 2;
-
-        } else {
-            usage();
-        }
-    }
-    sprintf(expr + expInd, " %% 97");
-    printf("expr: %s\n", expr);
+    //TODO
 }
 
 /***************************************************************************
@@ -128,31 +103,29 @@ void task_1(char *iban, char expr[MAX_TEXTLEN]) {
  * @param result The result received from the child `./calc`.
  */
 void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]) {
-    task_2_DEMO(fd, expr, result);
-
-    pid_t cpid = fork();
-    if (cpid == -1) {
-        perror("fork");
+    pid_t pid = fork();
+    if (pid == -1){
+        close(fd[0]);
+        close(fd[1]);
         exit(EXIT_EFORK);
-    }
-    if (cpid == 0) {
-        // run calc in child
+    } else if (pid == 0){
         task_3(fd, expr);
+        close(fd[0]);
+        close(fd[1]);
+        exit(EXIT_FAILURE);
     }
 
-    // wait for child to exit
-    int wstatus;
-    if (waitpid(cpid, &wstatus, 0) == -1) {
-        error_exit("waitpid");
+    int status = EXIT_SUCCESS;
+    int waitp = waitpid(pid, &status, 0);
+    if (waitp == -1 || status != EXIT_SUCCESS || WEXITSTATUS(status) != EXIT_SUCCESS){
+        close(fd[0]);
+        close(fd[1]);
+        exit(EXIT_FAILURE);
     }
-    if (WEXITSTATUS(wstatus) == EXIT_FAILURE) {
-        error_exit("./calc in child failed");
-    }
-
-    // read result from child into result variable
-    close(fd[READ_END]);
+    
     read(fd[READ_END], result, MAX_TEXTLEN);
-    close(fd[WRITE_END]);
+    close(fd[0]);
+    close(fd[1]);
 }
 
 /****************************************************************************
@@ -175,12 +148,9 @@ void task_2(int fd[2], char expr[MAX_TEXTLEN], char result[MAX_TEXTLEN]) {
  * @param expr Prepared expression for `./calc`, the child program.
  */
 void task_3(int fd[2], char expr[MAX_TEXTLEN]) {
-    // print to write end
     close(fd[READ_END]);
-    dup2(fd[WRITE_END], fileno(stdout));
+    dup2(fd[WRITE_END], STDOUT_FILENO);
     close(fd[WRITE_END]);
 
-    // run ./calc as this process
     execl("./calc", "./calc", expr, (char *)NULL);
-    error_exit("execl");  // should not be reached
 }
