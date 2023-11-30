@@ -103,6 +103,7 @@ void task_1(char *iban, char expr[MAX_TEXTLEN]) {
         } else assert(0);
     }
     expr[pos+1] = '\0';
+    sprintf(expr + pos , " %% 97");
     printf("expr: %s\n", expr);
 
 }
