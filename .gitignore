@@ -7,3 +7,6 @@
 /.idea/codeStyles/codeStyleConfig.xml
 /1B cpair/CMakeLists.txt
 /1B cpair/stdin.txt
+./client
+./server
+*/*.o

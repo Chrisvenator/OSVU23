@@ -28,41 +28,41 @@ int main(int argc, char **argv) {
     bool b_set = false;
     bool c_set = false;
 
-    char* a = "false";
-    char* c = "false";
-	
+    char *a = "false";
+    char *c = "false";
+
     int opt;
     while ((opt = getopt(argc, argv, "a:bc::")) != -1) {
-               switch (opt) {
-               case 'a':
-		       if(a_set == true || b_set == true || c_set == true) usage("a");
-                   a_set = true;
-		   a = optarg;
-                   break;
-               case 'b':
-		   if(a_set == true || b_set == true || c_set == true) usage("a");
-                   b_set = true;
-                   break;
-	       case 'c':
-		   if(a_set == true || b_set == true || c_set == true) usage("a");
-		   c_set = true;
-		   if (optarg) c = argv[optind++];
-		   else c = "true";
-		   break;
-               default: /* '?' */
-                   usage("other");
-               }
-           }
+        switch (opt) {
+            case 'a':
+                if (a_set == true || b_set == true || c_set == true) usage("a");
+                a_set = true;
+                a = optarg;
+                break;
+            case 'b':
+                if (a_set == true || b_set == true || c_set == true) usage("a");
+                b_set = true;
+                break;
+            case 'c':
+                if (a_set == true || b_set == true || c_set == true) usage("a");
+                c_set = true;
+                if (optarg) c = argv[optind++];
+                else c = "true";
+                break;
+            default: /* '?' */
+                usage("other");
+        }
+    }
 
     if (argc - optind != 4) usage("files");
-    
-    int length = strlen(argv[optind]) +strlen(argv[optind+1]) +strlen(argv[optind+2]) +strlen(argv[optind+3]);
 
-    char * total_string = malloc(length * sizeof(char));
-    for (int i = 0; i<4; i++){
-	    strcat(total_string, argv[optind++]);
+    int length = strlen(argv[optind]) + strlen(argv[optind + 1]) + strlen(argv[optind + 2]) + strlen(argv[optind + 3]);
+
+    char *total_string = malloc(length * sizeof(char));
+    for (int i = 0; i < 4; i++) {
+        strcat(total_string, argv[optind++]);
     }
-    	
+
     printf("a: %s\n", a);
     printf("b_set: %s\n", b_set ? "true" : "false");
     printf("c: %s\n", c);
