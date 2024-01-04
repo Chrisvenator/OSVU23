@@ -9,106 +9,14 @@ static void usage(void) {
 }
 
 struct arguments {
-    int port;
+    char *port;
     char *file;
     char *dir;
     char *url;
+    char *hostname;
+    char *resource;
 };
 
-int parsePortNumber(const char *portStr) {
-    char *endptr;
-    errno = 0; // To distinguish success/failure after the call
-    long port = strtol(portStr, &endptr, 10);
-
-    // Check for various possible errors
-    if ((errno == ERANGE && (port == LONG_MAX || port == LONG_MIN)) || (errno != 0 && port == 0)) {
-        perror("strtol");
-        usage();
-    }
-
-    if (endptr == portStr) {
-        fprintf(stderr, "No digits were found\n");
-        usage();
-    }
-
-    // If we got here, strtol() successfully parsed a number
-    if (*endptr != '\0') { // In case there are any non-numeric characters
-        fprintf(stderr, "Further characters after number: %s\n", endptr);
-        usage();
-    }
-
-    // Check if port number is within the valid range (1-65535)
-    if (port < 1 || port > 65535) {
-        fprintf(stderr, "Port number out of range\n");
-        usage();
-    }
-
-    return (int) port;
-}
-
-
-static arguments parse_arguments(int argc, char *argv[]) {
-    if (argc == 0) exit(EXIT_FAILURE);
-    PROGRAM_NAME = argv[0];
-
-    int opt;
-    arguments args;
-    args.port = DEFAULT_PORT;
-    args.file = NULL;
-    args.dir = NULL;
-    args.url = NULL;
-
-    bool p_set = false;
-    bool o_set = false;
-    bool d_set = false;
-
-    // Using getopt to parse command-line arguments
-    while ((opt = getopt(argc, argv, "p:o:d:")) != -1) {
-        switch (opt) {
-            case 'p':
-                if (p_set == true) usage();
-                p_set = true;
-                args.port = parsePortNumber(optarg);
-                break;
-
-            case 'o':
-                if (o_set || d_set) usage();
-                o_set = true;
-                args.file = optarg;
-                break;
-
-            case 'd':
-                if (o_set || d_set) usage();
-                d_set = true;
-                args.dir = optarg;
-                break;
-
-            case '?': // Unrecognized option
-                fprintf(stderr, "Usage: %s [-p PORT] [-o FILE | -d DIR] URL\n", argv[0]);
-                usage();
-            default: //unreachable option
-                usage();
-                assert(0);
-        }
-    }
-
-    // Checking for mandatory URL argument
-    if (optind >= argc) {
-        fprintf(stderr, "Expected argument after options\n");
-        exit(EXIT_FAILURE);
-    }
-
-    args.url = argv[optind];
-    if (optind + 1 != argc) usage();
-
-    // print the parsed arguments:
-    printf("PORT: %d\n", args.port);
-    printf("FILE: %s\n", args.file);
-    printf("DIR: %s\n", args.dir);
-    printf("URL: %s\n", args.url);
-
-    return args;
-}
 
 static char *extract_hostname(arguments args) {
     // Copy the URL to a modifiable string
@@ -150,6 +58,110 @@ static char *extract_hostname(arguments args) {
     free(urlCopy);
     return result;
 }
+
+static char *extract_resource(arguments args) {
+    if (args.url == NULL) {
+        return "/";
+    }
+
+    // Find the start of the resource (after "://")
+    const char *start = strstr(args.url, "://");
+    if (start != NULL) {
+        start = strchr(start + 3, '/');
+    } else {
+        start = strchr(args.url, '/');
+    }
+
+    // If there is no resource part, return an empty string
+    if (start == NULL) {
+        return strdup("/");
+    }
+
+    // Allocate memory for the resource
+    char *resource = malloc(strlen(start) + 1);
+    if (resource == NULL) {
+        return NULL; // Allocation failed
+    }
+
+    // Copy the resource, stopping at any special character
+    const char *special_chars = ";?:@=&";
+    size_t i = 0;
+    while (start[i] && strchr(special_chars, start[i]) == NULL) {
+        resource[i] = start[i];
+        ++i;
+    }
+
+    resource[i] = '\0'; // Null-terminate the string
+
+    return resource;
+}
+
+static arguments parse_arguments(int argc, char *argv[]) {
+    if (argc == 0) exit(EXIT_FAILURE);
+    PROGRAM_NAME = argv[0];
+
+    int opt;
+    arguments args;
+    args.port = "80";
+    args.file = NULL;
+    args.dir = NULL;
+    args.url = NULL;
+
+    bool p_set = false;
+    bool o_set = false;
+    bool d_set = false;
+
+    // Using getopt to parse command-line arguments
+    while ((opt = getopt(argc, argv, "p:o:d:")) != -1) {
+        switch (opt) {
+            case 'p':
+                if (p_set == true) usage();
+                p_set = true;
+                args.port = optarg;
+                break;
+
+            case 'o':
+                if (o_set || d_set) usage();
+                o_set = true;
+                args.file = optarg;
+                break;
+
+            case 'd':
+                if (o_set || d_set) usage();
+                d_set = true;
+                args.dir = optarg;
+                break;
+
+            case '?': // Unrecognized option
+                fprintf(stderr, "Usage: %s [-p PORT] [-o FILE | -d DIR] URL\n", argv[0]);
+                usage();
+            default: //unreachable option
+                usage();
+                assert(0);
+        }
+    }
+
+    // Checking for mandatory URL argument
+    if (optind >= argc) {
+        fprintf(stderr, "Expected argument after options\n");
+        exit(EXIT_FAILURE);
+    }
+
+    args.url = argv[optind];
+    if (optind + 1 != argc) usage();
+
+    // print the parsed arguments:
+    printf("PORT: %s\n", args.port);
+    printf("FILE: %s\n", args.file);
+    printf("DIR: %s\n", args.dir);
+    printf("URL: %s\n", args.url);
+
+    args.hostname = extract_hostname(args);
+    args.resource = extract_resource(args);
+
+    return args;
+}
+
 
 static int parseHttpResponseStatus(const char *responseLine) {
     char httpVersion[9]; // Enough to hold "HTTP/1.1"
