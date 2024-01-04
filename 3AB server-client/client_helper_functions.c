@@ -151,112 +151,39 @@ static char *extract_hostname(arguments args) {
     return result;
 }
 
-static void parseHttpResponseStatus(FILE *sockfile) {
-    char responseLine[1024];
+static int parseHttpResponseStatus(const char *responseLine) {
     char httpVersion[9]; // Enough to hold "HTTP/1.1"
     int statusCode;
     char statusMessage[1024];
 
-    if (fgets(responseLine, sizeof(responseLine), sockfile) == NULL) {
-        fprintf(stderr, "Error reading response\n");
-        exit(EXIT_FAILURE);
+    //Checking if we even have the header present in the string.
+    if (strncmp(responseLine, "HTTP/", 5) != 0) {
+        return 0;
     }
 
-    // Parse the response line TODO: Replace sscanf
+    // Parse the response line
     if (sscanf(responseLine, "%8s %d %[^\r\n]", httpVersion, &statusCode, statusMessage) < 3) {
         fprintf(stderr, "Protocol error!\n");
-        exit(2);
+        return 2;
     }
 
     // Check if response starts with "HTTP/1.1"
     if (strcmp(httpVersion, "HTTP/1.1") != 0) {
         fprintf(stderr, "Protocol error!\n");
-        exit(2);
+        return 2;
     }
 
     // Check if status code is 200
     if (statusCode != 200) {
-        fprintf(stderr, "Server response: %d %s\n", statusCode, statusMessage);
-        exit(3);
+//        fprintf(stderr, "Server response: %d %s\n", statusCode, statusMessage);
+        fprintf(stderr, "%d %s\n", statusCode, statusMessage);
+        return 3;
     }
+
+    return 0;
 }
 
 
 
-static char *performHttpGet(arguments args) {
-    struct addrinfo hints, *res;
-    int sockfd;
-    char *hostname = extract_hostname(args);
-    char *response = NULL;
-    size_t responseSize = 0;
 
-    fprintf(stdout, "Hostname: %s\n", hostname);
-
-    // Setting up hints structure for getaddrinfo
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    // Resolve the domain name into a list of addresses
-    if (getaddrinfo(hostname, "http", &hints, &res) != 0) {
-        perror("getaddrinfo failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Create a socket and connect
-    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockfd == -1) {
-        perror("socket creation failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
-        perror("connect failed\n");
-        close(sockfd);
-        exit(EXIT_FAILURE);
-    }
-
-    // Convert socket to file pointer for easier handling
-    FILE *sockfile = fdopen(sockfd, "r+");
-    if (sockfile == NULL) {
-        perror("fdopen failed\n");
-        close(sockfd);
-        exit(EXIT_FAILURE);
-    }
-
-    // Send the HTTP GET request
-    fprintf(sockfile, "GET %s HTTP/1.1\r\n", args.dir);
-//    fprintf(sockfile, "Host: %s\r\n", hostname);
-    fprintf(sockfile, "Host: %s\r\n", args.url);
-    fprintf(sockfile, "Connection: close\r\n\r\n");
-    fflush(sockfile);
-
-    parseHttpResponseStatus(sockfile);
-
-    // Initialize response buffer
-    char buf[1024];
-    size_t len;
-    while (fgets(buf, sizeof(buf), sockfile) != NULL) {
-        len = strlen(buf);
-        char *newResponse = realloc(response, responseSize + len + 1);
-        if (newResponse == NULL) {
-            perror("realloc failed");
-            free(response);
-            fclose(sockfile);
-            close(sockfd);
-            freeaddrinfo(res);
-            exit(EXIT_FAILURE);
-        }
-        response = newResponse;
-        strcpy(response + responseSize, buf);
-        responseSize += len;
-    }
-
-    // Clean up
-    fclose(sockfile);
-    close(sockfd);
-    freeaddrinfo(res);
-
-    return response;
-}
 

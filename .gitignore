@@ -10,3 +10,4 @@
 ./client
 ./server
 */*.o
+/3AB server-client/out.txt
