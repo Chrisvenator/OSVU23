@@ -4,7 +4,7 @@
 #include "headers.h"
 
 static void usage(void) {
-    fprintf(stderr, "[%s]USAGE: client [-p PORT] [ -o FILE | -d DIR ] URL\n", PROGRAM_NAME);
+    fprintf(stderr, "[%s] USAGE: client [-p PORT] [ -o FILE | -d DIR ] URL\n", PROGRAM_NAME);
     exit(EXIT_FAILURE);
 }
 
@@ -97,7 +97,7 @@ static char *extract_resource(arguments args) {
 }
 
 //TODO: free URL everywhere where needed
-void appendIndexHtmlIfRequired(char **path) {
+static void appendIndexHtmlIfRequired(char **path) {
     const char *suffix = "/";
     const char *appendStr = "index.html";
     size_t pathLen = strlen(*path);
@@ -118,9 +118,12 @@ void appendIndexHtmlIfRequired(char **path) {
     }
 }
 
+/**
+ * @brief Checks if str ends with '/', if not, append it
+ * @details
+ * @param str
+ */
 static void addSlashToEnd(char **str) {
-    // Check if str ends with '/', if not, append it
-
     size_t dirLen = strlen(*str);
     if (dirLen == 0 || *str[dirLen - 1] != '/') {
         char *newDir = malloc((sizeof(*str) + sizeof(char *) * 2)); // +1 for '/' and +1 for null terminator
@@ -168,7 +171,7 @@ static int getNumberOfChar(char *str, char c) {
 }
 
 static arguments parse_arguments(int argc, char *argv[]) {
-    if (argc == 0) exit(EXIT_FAILURE);
+    if (argc == 0) usage();
     PROGRAM_NAME = argv[0];
 
     int opt;
@@ -183,6 +186,8 @@ static arguments parse_arguments(int argc, char *argv[]) {
     bool p_set = false;
     bool o_set = false;
     bool d_set = false;
+
+    opterr = 0; //Silence the "Invalid option -- x" error
 
     // Using getopt to parse command-line arguments
     while ((opt = getopt(argc, argv, "p:o:d:")) != -1) {
@@ -206,19 +211,17 @@ static arguments parse_arguments(int argc, char *argv[]) {
                 break;
 
             case '?': // Unrecognized option
-                fprintf(stderr, "Usage: %s [-p PORT] [-o FILE | -d DIR] URL\n", argv[0]);
                 usage();
+                break;
             default: //unreachable option
                 usage();
                 assert(0);
+                break;
         }
     }
 
     // Checking for mandatory URL argument
-    if (optind >= argc) {
-        fprintf(stderr, "Expected argument after options\n");
-        exit(EXIT_FAILURE);
-    }
+    if (optind >= argc) usage();
 
     args.url = argv[optind];
     if (optind + 1 != argc) usage();

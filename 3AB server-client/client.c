@@ -14,20 +14,6 @@ int main(int argc, char *argv[]) {
 
 }
 
-//void addSlashToEnd(char **str) {
-//    size_t len = strlen(*str);
-//    if (len == 0 || (*str)[len - 1] != '/') {
-//        char *newStr = realloc(*str, len + 2); // +1 for '/' and +1 for null terminator
-//        if (newStr == NULL) {
-//            perror("Failed to allocate memory");
-//            exit(EXIT_FAILURE);
-//        }
-//        newStr[len] = '/';
-//        newStr[len + 1] = '\0';
-//        *str = newStr;
-//    }
-//}
-
 static void performHttpGet(arguments args) {
     struct addrinfo hints, *res;
     int sockfd;
@@ -40,8 +26,8 @@ static void performHttpGet(arguments args) {
 
     // Resolve the domain name into a list of addresses
     if (getaddrinfo(args.hostname, (char *) (args.port), &hints, &res) != 0) {
-        perror("getaddrinfo failed\n");
-        freeaddrinfo(res);
+//        perror("getaddrinfo failed\n");
+        fprintf(stderr, "getaddrinfo failed\n");
         free(args.resource);
         exit(EXIT_FAILURE);
     }
