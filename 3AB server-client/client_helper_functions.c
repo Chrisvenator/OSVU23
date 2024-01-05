@@ -96,6 +96,31 @@ static char *extract_resource(arguments args) {
     return resource;
 }
 
+//TODO: free URL everywhere where needed
+void appendIndexIfRequired(arguments *args) {
+    const char *suffix = "/";
+    const char *appendStr = "index.html";
+    size_t urlLen = strlen(args->url);
+    size_t suffixLen = strlen(suffix);
+
+    // Check if the URL ends with '/'
+    if (urlLen >= suffixLen && strcmp(args->url + urlLen - suffixLen, suffix) == 0) {
+        // Allocate new memory for the modified URL
+        char *newUrl = malloc(urlLen + strlen(appendStr) + 1); // +1 for null-terminator
+        if (newUrl == NULL) {
+            perror("Failed to allocate memory");
+            exit(EXIT_FAILURE);
+        }
+
+        strcpy(newUrl, args->url);
+        strcat(newUrl, appendStr);
+
+        // Free the old URL if it was dynamically allocated
+        strcpy(args->url, newUrl);
+        free(newUrl);
+    }
+}
+
 static arguments parse_arguments(int argc, char *argv[]) {
     if (argc == 0) exit(EXIT_FAILURE);
     PROGRAM_NAME = argv[0];
@@ -106,6 +131,8 @@ static arguments parse_arguments(int argc, char *argv[]) {
     args.file = NULL;
     args.dir = NULL;
     args.url = NULL;
+    args.hostname = NULL;
+    args.resource = NULL;
 
     bool p_set = false;
     bool o_set = false;
@@ -149,6 +176,8 @@ static arguments parse_arguments(int argc, char *argv[]) {
 
     args.url = argv[optind];
     if (optind + 1 != argc) usage();
+    appendIndexIfRequired(&args);
+
 
     // print the parsed arguments:
     printf("PORT: %s\n", args.port);
@@ -158,6 +187,11 @@ static arguments parse_arguments(int argc, char *argv[]) {
 
     args.hostname = extract_hostname(args);
     args.resource = extract_resource(args);
+
+    if (d_set == true && args.file != NULL && args.resource != NULL) {
+        strcat(args.file, "/");
+    }
+
 
     return args;
 }
