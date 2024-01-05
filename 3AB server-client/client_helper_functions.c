@@ -283,19 +283,16 @@ static int parseHttpResponseStatus(const char *responseLine) {
 
     // Parse the response line
     if (sscanf(responseLine, "%8s %d %[^\r\n]", httpVersion, &statusCode, statusMessage) < 3) {
-        fprintf(stderr, "Protocol error!\n");
+        fprintf(stderr, "[%s]Protocol error!\n", PROGRAM_NAME);
         return 2;
     }
 
-    // Check if response starts with "HTTP/1.1"
     if (strcmp(httpVersion, "HTTP/1.1") != 0) {
-        fprintf(stderr, "Protocol error!\n");
+        fprintf(stderr, "[%s]Protocol error!\n", PROGRAM_NAME);
         return 2;
     }
 
-    // Check if status code is 200
     if (statusCode != 200) {
-//        fprintf(stderr, "Server response: %d %s\n", statusCode, statusMessage);
         fprintf(stderr, "%d %s\n", statusCode, statusMessage);
         return 3;
     }
