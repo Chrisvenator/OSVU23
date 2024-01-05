@@ -4,6 +4,7 @@ echo -e "make:"
 make
 
 usage="[./client] USAGE: client [-p PORT] [ -o FILE | -d DIR ] URL"
+valgrind="valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ";
 EVERYTHING_CORRECT="true"
 
 
@@ -59,37 +60,43 @@ function test_command() {
       echo "Expected: $expected_exit_status"
       echo "Got: $exit_status"
     fi
+
+    if grep -q "All heap blocks were freed -- no leaks are possible" "log.txt"; then
+        echo "All heap blocks were freed -- no leaks are possible"
+    else
+        EVERYTHING_CORRECT="false"
+        echo "ERROR: MEMORY LEAK:"
+        cat "log.txt"
+    fi
+
+    echo "All heap blocks were freed -- no leaks are possible">log.txt
 }
 
 
-#test_command "01" "./client" "" "$usage" 1
-#test_command "02" "./client -p abc > /dev/null" "" "$usage" 1
-#test_command "03" "./client -p 80x http://localhost/ > /dev/null" "" "getaddrinfo failed" 1
-#test_command "04" "./client -p 80 -p 81 http://localhost/ > /dev/null" "" "$usage" 1
-#test_command "05" "./client -a http://localhost/ > /dev/null" "" "$usage" 1
+test_command "01" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client" "" "$usage" 1
+test_command "02" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p abc > /dev/null" "" "$usage" 1
+test_command "03" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p 80x http://localhost/ > /dev/null" "" "getaddrinfo failed" 1
+test_command "04" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p 80 -p 81 http://localhost/ > /dev/null" "" "$usage" 1
+test_command "05" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -a http://localhost/ > /dev/null" "" "$usage" 1
 
 mkdir tests
 url=http://www.example.com/
 wget $url -q -O tests/example.html
 
-test_command "A01.1" "./client $url > tests/test_A01.html" "" "" "0"
+test_command "A01.1" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client $url > tests/test_A01.html" "" "" "0"
 test_command "A01.2" "diff tests/example.html tests/test_A01.html" "" "" "0"
-
-test_command "A02.1" "./client -o tests/test_A02.html $url" "" "" "0"
+test_command "A02.1" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -o tests/test_A02.html $url" "" "" "0"
 test_command "A02.2" "diff tests/example.html tests/test_A02.html" "" "" "0"
-
-test_command "A03.1" "./client -d tests/ $url" "" "" "0"
+test_command "A03.1" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -d tests/ $url" "" "" "0"
 test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
-
 rm tests -r
-
-test_command "A03.1" "./client -d tests/ $url" "" "" "0"
+test_command "A03.1" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -d tests/ $url" "" "" "0"
 wget $url -q -O tests/example.html
 test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
 
 rm tests -r
 
-test_command "A03.1" "./client -d tests $url" "" "" "0"
+test_command "A03.1" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -d tests $url" "" "" "0"
 wget $url -q -O tests/example.html
 test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
 
@@ -111,7 +118,7 @@ test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
 
 
 
-
+rm log.txt
 rm tests -r
 
 ####################Check if everything had been correct:

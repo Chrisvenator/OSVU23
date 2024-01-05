@@ -8,10 +8,7 @@ static void performHttpGet(arguments args);
 
 int main(int argc, char *argv[]) {
     arguments args = parse_arguments(argc, argv);
-    args.dir = "/";
-
     performHttpGet(args);
-
 }
 
 static void performHttpGet(arguments args) {
@@ -26,10 +23,11 @@ static void performHttpGet(arguments args) {
 
     // Resolve the domain name into a list of addresses
     if (getaddrinfo(args.hostname, (char *) (args.port), &hints, &res) != 0) {
-//        perror("getaddrinfo failed\n");
-        fprintf(stderr, "getaddrinfo failed\n");
+        fprintf(stderr, "[%s] ", PROGRAM_NAME);
+        //With perror, the errormessage AND the cause gets thrown automatically
+        perror("getaddrinfo failed\n");
         free(args.hostname);
-        free(args.file);
+        if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -37,20 +35,22 @@ static void performHttpGet(arguments args) {
     // Create a socket and connect
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sockfd == -1) {
+        fprintf(stderr, "[%s] ", PROGRAM_NAME);
         perror("socket creation failed\n");
         freeaddrinfo(res);
         free(args.hostname);
-        free(args.file);
+        if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
 
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+        fprintf(stderr, "[%s] ", PROGRAM_NAME);
         perror("connect failed\n");
         close(sockfd);
         freeaddrinfo(res);
         free(args.hostname);
-        free(args.file);
+        if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -58,10 +58,11 @@ static void performHttpGet(arguments args) {
     // Convert socket to file pointer for easier handling
     FILE *sockfile = fdopen(sockfd, "r+");
     if (sockfile == NULL) {
+        fprintf(stderr, "[%s] ", PROGRAM_NAME);
         perror("fdopen failed\n");
         close(sockfd);
         free(args.hostname);
-        free(args.file);
+        if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -82,11 +83,10 @@ static void performHttpGet(arguments args) {
         //check if the response was not a success
         int response = parseHttpResponseStatus(buffer);
         if (response != 0) {
-            //TODO: close everything here
             fclose(sockfile);
             close(sockfd);
-            free(args.file);
             freeaddrinfo(res);
+            if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
 
             exit(response);
         }
@@ -97,14 +97,29 @@ static void performHttpGet(arguments args) {
         }
     }
 
+//    if (args.file != NULL) {
+//        if (access(args.file, R_OK) != 0 || access(args.file, W_OK) != 0) {
+//            fprintf(stderr, "[%s] ERROR: Opening file: %s. %s\n", PROGRAM_NAME, args.file, strerror(errno));
+//            fclose(sockfile);
+//            close(sockfd);
+//            freeaddrinfo(res);
+//
+//            exit(EXIT_FAILURE);
+//        }
+//    }
+
     // Read the response body
     FILE *outputFile = args.file == NULL ? stdout : fopen(args.file, "w");
+
+
+
+    //This handles the File pointer. The errormessage "Error opening output file: Permission denied" is being thrown by perror.
     if (outputFile == NULL) {
+        fprintf(stderr, "[%s] ", PROGRAM_NAME);
         perror("Error opening output file");
         //TODO: close everything here
         fclose(sockfile);
         close(sockfd);
-        free(args.file);
         freeaddrinfo(res);
 
         exit(EXIT_FAILURE);
@@ -120,6 +135,7 @@ static void performHttpGet(arguments args) {
     }
     fclose(sockfile);
     close(sockfd);
-    free(args.file);
+    if (args.dir != NULL && strcmp(args.dir, args.file) == 0) free(args.file);
+
     freeaddrinfo(res);
 }

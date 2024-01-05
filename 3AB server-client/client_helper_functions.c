@@ -59,6 +59,22 @@ static char *extract_hostname(arguments args) {
     return result;
 }
 
+static int getNumberOfChar(char *str, char c) {
+    if (str == NULL || strlen(str) == 0) {
+        assert(0);
+        return 0;
+    }
+    int count = 0;
+    for (int i = 0; str[i]; i++) {
+        if (str[i] == c) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+
 static char *extract_resource(arguments args) {
     if (args.url == NULL) {
         return "/";
@@ -163,12 +179,6 @@ static void appendFilenameToDir(arguments *args) {
 
 }
 
-static int getNumberOfChar(char *str, char c) {
-    int i;
-    for (i = 0; str[i]; str[i] == c ? i++ : *str++);
-
-    return i;
-}
 
 static arguments parse_arguments(int argc, char *argv[]) {
     if (argc == 0) usage();
@@ -208,6 +218,30 @@ static arguments parse_arguments(int argc, char *argv[]) {
                 if (o_set || d_set) usage();
                 d_set = true;
                 args.dir = optarg;
+
+                //Check if the string has some bad characters in it
+                const char *special_chars2 = "!\"§$%&=?²³¼½¬{[]}\\,;:<>|´`+*~#'@€ ";
+
+                for (int j = 0; j < strlen(special_chars2); ++j) {
+                    if (getNumberOfChar(args.dir, special_chars2[j]) != 0) {
+                        free(args.hostname);
+                        free(args.resource);
+                        fprintf(stderr, "[%s] Invalid Filename: %c!\n", PROGRAM_NAME, special_chars2[j]);
+
+                        exit(EXIT_FAILURE);
+                    }
+                }
+
+                //Make it so that a directory can never have a "."
+                if (args.dir != NULL && getNumberOfChar(args.dir, '.') != 0) {
+                    free(args.hostname);
+                    free(args.resource);
+                    fprintf(stderr, "[%s] Invalid Filename!\n", PROGRAM_NAME);
+
+                    exit(EXIT_FAILURE);
+                }
+
+
                 break;
 
             case '?': // Unrecognized option
@@ -245,26 +279,23 @@ static arguments parse_arguments(int argc, char *argv[]) {
             strcat(args.dir, "/");
             appendIndexHtmlIfRequired(&args.dir);
         } else {
-//            printf("DIR0: %s\n", args.dir);
             addSlashToEnd(&args.dir);
-//            printf("DIR1: %s\n", args.dir);
             appendFilenameToDir(&args);
-//            printf("DIR2: %s\n", args.dir);
         }
 
-        args.file = malloc(sizeof(args.dir) + sizeof(char *) * 2);
+        args.file = malloc(strlen(args.dir) + 1);
         strcpy(args.file, args.dir);
     }
 
     appendIndexHtmlIfRequired(&args.url);
 
-    // print the parsed arguments:
-    // printf("\nPORT: %s\n", args.port);
-    // printf("FILE: %s\n", args.file);
-    // printf("DIR: %s\n", args.dir);
-    // printf("URL: %s\n", args.url);
-    // printf("Hostname: %s\n", args.hostname);
-    // printf("Resource: %s\n\n", args.resource);
+//     print the parsed arguments:
+//    printf("\nPORT: %s\n", args.port);
+//    printf("FILE: %s\n", args.file);
+//    printf("DIR: %s\n", args.dir);
+//    printf("URL: %s\n", args.url);
+//    printf("Hostname: %s\n", args.hostname);
+//    printf("Resource: %s\n\n", args.resource);
 
 
     return args;
