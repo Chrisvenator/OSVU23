@@ -28,6 +28,8 @@ static void performHttpGet(arguments args) {
     if (getaddrinfo(args.hostname, (char *) (args.port), &hints, &res) != 0) {
 //        perror("getaddrinfo failed\n");
         fprintf(stderr, "getaddrinfo failed\n");
+        free(args.hostname);
+        free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -37,6 +39,8 @@ static void performHttpGet(arguments args) {
     if (sockfd == -1) {
         perror("socket creation failed\n");
         freeaddrinfo(res);
+        free(args.hostname);
+        free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -45,6 +49,8 @@ static void performHttpGet(arguments args) {
         perror("connect failed\n");
         close(sockfd);
         freeaddrinfo(res);
+        free(args.hostname);
+        free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -54,6 +60,8 @@ static void performHttpGet(arguments args) {
     if (sockfile == NULL) {
         perror("fdopen failed\n");
         close(sockfd);
+        free(args.hostname);
+        free(args.file);
         free(args.resource);
         exit(EXIT_FAILURE);
     }
@@ -63,7 +71,9 @@ static void performHttpGet(arguments args) {
     fprintf(sockfile, "Host: %s\r\n", args.hostname);
     fprintf(sockfile, "Connection: close\r\n\r\n");
     fflush(sockfile);
+    free(args.hostname);
     free(args.resource);
+
 
 
     // Skip header fields
@@ -75,6 +85,7 @@ static void performHttpGet(arguments args) {
             //TODO: close everything here
             fclose(sockfile);
             close(sockfd);
+            free(args.file);
             freeaddrinfo(res);
 
             exit(response);
@@ -93,6 +104,7 @@ static void performHttpGet(arguments args) {
         //TODO: close everything here
         fclose(sockfile);
         close(sockfd);
+        free(args.file);
         freeaddrinfo(res);
 
         exit(EXIT_FAILURE);
@@ -108,5 +120,6 @@ static void performHttpGet(arguments args) {
     }
     fclose(sockfile);
     close(sockfd);
+    free(args.file);
     freeaddrinfo(res);
 }

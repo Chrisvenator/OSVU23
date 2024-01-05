@@ -235,12 +235,7 @@ static arguments parse_arguments(int argc, char *argv[]) {
         struct stat st = {0};
 
         if (stat(args.dir, &st) == -1) {
-            printf("Creating directory...\n");
-            printf("Creating directory...\n");
             mkdir(args.dir, 0777);
-            printf("Dir created.\n");
-        } else {
-            printf("Dir exists\n");
         }
 
         //check if last character is "/". If yes, add "index.html"
@@ -250,26 +245,26 @@ static arguments parse_arguments(int argc, char *argv[]) {
             strcat(args.dir, "/");
             appendIndexHtmlIfRequired(&args.dir);
         } else {
-            printf("DIR0: %s\n", args.dir);
+//            printf("DIR0: %s\n", args.dir);
             addSlashToEnd(&args.dir);
-            printf("DIR1: %s\n", args.dir);
+//            printf("DIR1: %s\n", args.dir);
             appendFilenameToDir(&args);
-            printf("DIR2: %s\n", args.dir);
+//            printf("DIR2: %s\n", args.dir);
         }
 
-        args.file = malloc(sizeof(args.dir));
+        args.file = malloc(sizeof(args.dir) + sizeof(char *) * 2);
         strcpy(args.file, args.dir);
     }
 
     appendIndexHtmlIfRequired(&args.url);
 
     // print the parsed arguments:
-    printf("\nPORT: %s\n", args.port);
-    printf("FILE: %s\n", args.file);
-    printf("DIR: %s\n", args.dir);
-    printf("URL: %s\n", args.url);
-    printf("Hostname: %s\n", args.hostname);
-    printf("Resource: %s\n\n", args.resource);
+    // printf("\nPORT: %s\n", args.port);
+    // printf("FILE: %s\n", args.file);
+    // printf("DIR: %s\n", args.dir);
+    // printf("URL: %s\n", args.url);
+    // printf("Hostname: %s\n", args.hostname);
+    // printf("Resource: %s\n\n", args.resource);
 
 
     return args;

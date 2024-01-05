@@ -69,7 +69,29 @@ function test_command() {
 #test_command "05" "./client -a http://localhost/ > /dev/null" "" "$usage" 1
 
 mkdir tests
-wget http://www.example.com/ -O tests/example.html
+url=http://www.example.com/
+wget $url -q -O tests/example.html
+
+test_command "A01.1" "./client $url > tests/test_A01.html" "" "" "0"
+test_command "A01.2" "diff tests/example.html tests/test_A01.html" "" "" "0"
+
+test_command "A02.1" "./client -o tests/test_A02.html $url" "" "" "0"
+test_command "A02.2" "diff tests/example.html tests/test_A02.html" "" "" "0"
+
+test_command "A03.1" "./client -d tests/ $url" "" "" "0"
+test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
+
+rm tests -r
+
+test_command "A03.1" "./client -d tests/ $url" "" "" "0"
+wget $url -q -O tests/example.html
+test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
+
+rm tests -r
+
+test_command "A03.1" "./client -d tests $url" "" "" "0"
+wget $url -q -O tests/example.html
+test_command "A03.2" "diff tests/example.html tests/index.html" "" "" "0"
 
 
 
