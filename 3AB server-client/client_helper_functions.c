@@ -97,28 +97,74 @@ static char *extract_resource(arguments args) {
 }
 
 //TODO: free URL everywhere where needed
-void appendIndexIfRequired(arguments *args) {
+void appendIndexHtmlIfRequired(char **path) {
     const char *suffix = "/";
     const char *appendStr = "index.html";
-    size_t urlLen = strlen(args->url);
+    size_t pathLen = strlen(*path);
     size_t suffixLen = strlen(suffix);
 
-    // Check if the URL ends with '/'
-    if (urlLen >= suffixLen && strcmp(args->url + urlLen - suffixLen, suffix) == 0) {
-        // Allocate new memory for the modified URL
-        char *newUrl = malloc(urlLen + strlen(appendStr) + 1); // +1 for null-terminator
-        if (newUrl == NULL) {
+    if (pathLen >= suffixLen && strcmp(*path + pathLen - suffixLen, suffix) == 0) {
+        char *newPath = malloc(pathLen + strlen(appendStr) + 1);
+        if (newPath == NULL) {
+            perror("Failed to allocate memory");
+            free(newPath);
+            exit(EXIT_FAILURE);
+        }
+        strcpy(newPath, *path);
+        strcat(newPath, appendStr);
+
+        strcpy(*path, newPath);
+        free(newPath);  // Free the old path
+    }
+}
+
+static void addSlashToEnd(char **str) {
+    // Check if str ends with '/', if not, append it
+
+    size_t dirLen = strlen(*str);
+    if (dirLen == 0 || *str[dirLen - 1] != '/') {
+        char *newDir = malloc((sizeof(*str) + sizeof(char *) * 2)); // +1 for '/' and +1 for null terminator
+        if (newDir == NULL) {
             perror("Failed to allocate memory");
             exit(EXIT_FAILURE);
         }
 
-        strcpy(newUrl, args->url);
-        strcat(newUrl, appendStr);
+        strcpy(newDir, *str);
+        newDir[dirLen] = '/';
+        newDir[dirLen + 1] = '\0';
 
-        // Free the old URL if it was dynamically allocated
-        strcpy(args->url, newUrl);
-        free(newUrl);
+        strcpy(*str, newDir);
+        free(newDir);
     }
+}
+
+
+static void appendFilenameToDir(arguments *args) {
+
+
+    // Find substring in args.resource after the last '/'
+    const char *lastSlash = strrchr(args->resource, '/');
+    if (lastSlash != NULL) {
+        // Append everything after the last '/' from args.resource to args.dir
+        const char *substring = lastSlash + 1; // Skip the '/'
+        char *updatedDir = malloc(sizeof(args->dir) + sizeof(substring) + sizeof(char *)); // +1 for null terminator
+        strcpy(updatedDir, args->dir);
+        if (updatedDir == NULL) {
+            perror("Failed to allocate memory");
+            exit(EXIT_FAILURE);
+        }
+
+        strcat(updatedDir, substring);
+        args->dir = updatedDir;
+    }
+
+}
+
+static int getNumberOfChar(char *str, char c) {
+    int i;
+    for (i = 0; str[i]; str[i] == c ? i++ : *str++);
+
+    return i;
 }
 
 static arguments parse_arguments(int argc, char *argv[]) {
@@ -176,21 +222,51 @@ static arguments parse_arguments(int argc, char *argv[]) {
 
     args.url = argv[optind];
     if (optind + 1 != argc) usage();
-    appendIndexIfRequired(&args);
 
-
-    // print the parsed arguments:
-    printf("PORT: %s\n", args.port);
-    printf("FILE: %s\n", args.file);
-    printf("DIR: %s\n", args.dir);
-    printf("URL: %s\n", args.url);
 
     args.hostname = extract_hostname(args);
     args.resource = extract_resource(args);
 
-    if (d_set == true && args.file != NULL && args.resource != NULL) {
-        strcat(args.file, "/");
+    if (d_set == true && args.dir != NULL && args.resource != NULL) {
+
+        struct stat st = {0};
+
+        if (stat(args.dir, &st) == -1) {
+            printf("Creating directory...\n");
+            printf("Creating directory...\n");
+            mkdir(args.dir, 0777);
+            printf("Dir created.\n");
+        } else {
+            printf("Dir exists\n");
+        }
+
+        //check if last character is "/". If yes, add "index.html"
+        //If no, the append the filename of the resource to the dir path. It will be later written into that file.
+
+        if ((args.url[strlen(args.url) - 1]) == '/' || getNumberOfChar(args.url, '/') <= 2) {
+            strcat(args.dir, "/");
+            appendIndexHtmlIfRequired(&args.dir);
+        } else {
+            printf("DIR0: %s\n", args.dir);
+            addSlashToEnd(&args.dir);
+            printf("DIR1: %s\n", args.dir);
+            appendFilenameToDir(&args);
+            printf("DIR2: %s\n", args.dir);
+        }
+
+        args.file = malloc(sizeof(args.dir));
+        strcpy(args.file, args.dir);
     }
+
+    appendIndexHtmlIfRequired(&args.url);
+
+    // print the parsed arguments:
+    printf("\nPORT: %s\n", args.port);
+    printf("FILE: %s\n", args.file);
+    printf("DIR: %s\n", args.dir);
+    printf("URL: %s\n", args.url);
+    printf("Hostname: %s\n", args.hostname);
+    printf("Resource: %s\n\n", args.resource);
 
 
     return args;

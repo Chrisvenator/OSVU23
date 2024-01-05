@@ -14,12 +14,23 @@ int main(int argc, char *argv[]) {
 
 }
 
+//void addSlashToEnd(char **str) {
+//    size_t len = strlen(*str);
+//    if (len == 0 || (*str)[len - 1] != '/') {
+//        char *newStr = realloc(*str, len + 2); // +1 for '/' and +1 for null terminator
+//        if (newStr == NULL) {
+//            perror("Failed to allocate memory");
+//            exit(EXIT_FAILURE);
+//        }
+//        newStr[len] = '/';
+//        newStr[len + 1] = '\0';
+//        *str = newStr;
+//    }
+//}
+
 static void performHttpGet(arguments args) {
     struct addrinfo hints, *res;
     int sockfd;
-
-    fprintf(stdout, "Hostname: %s\n", args.hostname);
-    fprintf(stdout, "Resource: %s\n", args.resource);
 
 
     // Setting up hints structure for getaddrinfo

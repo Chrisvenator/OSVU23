@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <netdb.h>
+#include <sys/stat.h>
 
 
 #define MAX_BUFFER_SIZE 80
