@@ -76,13 +76,13 @@ static void performHttpGet(arguments args) {
     free(args.resource);
 
 
-
+    int i = 0;
     // Skip header fields
     char buffer[1024];
     while (fgets(buffer, sizeof(buffer), sockfile) != NULL) {
         //check if the response was not a success
         int response = parseHttpResponseStatus(buffer);
-        if (response != 0) {
+        if (response != 0 && i == 0) {
             fclose(sockfile);
             close(sockfd);
             freeaddrinfo(res);
@@ -95,6 +95,8 @@ static void performHttpGet(arguments args) {
         if (strcmp(buffer, "\r\n") == 0) {
             break;
         }
+
+        i++;
     }
 
 //    if (args.file != NULL) {

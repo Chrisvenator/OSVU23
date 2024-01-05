@@ -309,7 +309,7 @@ static int parseHttpResponseStatus(const char *responseLine) {
 
     //Checking if we even have the header present in the string.
     if (strncmp(responseLine, "HTTP/", 5) != 0) {
-        return 0;
+        return 2;
     }
 
     // Parse the response line

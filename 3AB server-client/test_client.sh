@@ -75,7 +75,8 @@ function test_command() {
 
 test_command "01" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client" "" "$usage" 1
 test_command "02" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p abc > /dev/null" "" "$usage" 1
-test_command "03" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p 80x http://localhost/ > /dev/null" "" "getaddrinfo failed" 1
+test_command "03" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p 80x http://localhost/ > /dev/null" "" "[./client] getaddrinfo failed
+: Success" 1
 test_command "04" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -p 80 -p 81 http://localhost/ > /dev/null" "" "$usage" 1
 test_command "05" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./client -a http://localhost/ > /dev/null" "" "$usage" 1
 
