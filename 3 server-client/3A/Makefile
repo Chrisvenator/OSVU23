@@ -7,15 +7,14 @@
 ## $^: Das, was nach dem Doppelpunkt steht
 
 project_name = client
-project_name2 = #server
 compiler = gcc
 c_flags = -std=c99 -pedantic -Wall -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_POSIX_C_SOURCE=200809L -g
 
 
-all: clean $(project_name) $(project_name2) #TODO: REMOVE THIS clean
+all: $(project_name)
 
 # Define a generic rule to build an executable from its corresponding object file (%.o)
-$(project_name) $(project_name2): %: %.o
+$(project_name): %: %.o
 	$(compiler) $(c_flags) -o $@ $^ $(libs)
 
 # Define a generic rule to build object files from source files
