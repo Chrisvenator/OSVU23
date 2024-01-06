@@ -2,6 +2,7 @@
 
 - [1A MyCompress](#1a-mycompress)
 - [1B Closest Pair](#1b-closest-pair)
+- [3A http-client](#3a-http-client)
 - [contributing](#contributing-1)
 - [license](#license)
 
@@ -131,6 +132,60 @@ Input the points as instructed by the program, and it will output the closest pa
 
 The program uses a divide-and-conquer approach to find the closest pair of points, which is more efficient than the
 brute force method for large datasets.
+
+---
+
+# 3A http-client
+
+## Overview
+
+The "3A http-client" is a simple yet powerful HTTP client written in C. It is capable of sending HTTP GET requests to a specified URL and handling the responses appropriately. The project is structured with a focus on modularity and reusability, separating the core functionalities into different helper functions.
+
+## Features
+
+- Send HTTP GET requests to specified URLs.
+- Handle HTTP responses and output the received data.
+- Parse command-line arguments to specify request details like port, file, and directory.
+- Efficiently handle URLs, extracting hostname and resource paths.
+- Robust error handling and dynamic memory management.
+
+## Installation
+
+To install the http-client, clone the repository and compile the program using the provided Makefile:
+
+```bash
+make client
+```
+
+## Usage
+To use the http-client, run the compiled executable with the necessary arguments:
+```bash
+./client [-p PORT] [-o FILE | -d DIR] URL
+```
+### Options:
+
+- **-p** PORT: Specify the port number for the HTTP request.
+- **-o** FILE: Direct the output to a specified file.
+- **-d** DIR: Specify a directory for the output.
+- **URL**: The URL for the HTTP GET request.
+
+### Example Usage:
+```bash
+./client http://www.example.com/ > tests/test_A01.html
+./client -o tests/test_A02.html http://www.example.com/
+./client -d tests/ http://www.example.com/
+./client -d tests http://www.example.com/
+./client -f tests http://www.example.com/
+./client -f tests.html http://www.example.com/
+```
+
+## Dependencies
+- C standard libraries.
+- POSIX compliant system for network and file operations.
+
+## Contributing
+
+Contributions to enhance the http-client are encouraged. Please follow the standard procedure for contributions as outlined in the contributing section.
 
 ---
 
