@@ -14,7 +14,8 @@
  * <br> So please free everything before invoking this function.S
  */
 static void usage(void) {
-    fprintf(stderr, "\n[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
+    fprintf(stderr, "[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
+    fprintf(stderr, "[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
     exit(EXIT_FAILURE);
 }
 
@@ -22,6 +23,7 @@ typedef struct arguments {
     uint16_t PORT;
     char *INDEX;
     char *DOC_ROOT;
+    char full_path[PATH_MAX];
 } arguments;
 
 static int is_valid_port(const char *str, arguments *args) {
@@ -83,7 +85,7 @@ static int is_directory_accessible(const char *path) {
     // Check if path exists and get its status
     if (stat(path, &path_stat) != 0) {
         fprintf(stderr, "[%s]", PROGRAM_NAME);
-        perror("stat");
+        perror("directory path Path does not exist or cannot be accessed");
         return 0; // Path does not exist or cannot be accessed
     }
 
@@ -124,6 +126,16 @@ void send_response(int cfd, int status, const char *status_message, const char *
         }
         close(filefd);
     } else {
+        fprintf(stderr, "[%s], File: %s not found! ", PROGRAM_NAME, file_path);
         perror("send response to client");
     }
+}
+
+//TODO: Capslock
+//Note that sig_atomic_t is not thread-safe, only async-signal safe.
+volatile sig_atomic_t TERMINATE = false;
+
+// Signal handler for graceful shutdown
+void handle_signal(int sig) {
+    TERMINATE = true;
 }
