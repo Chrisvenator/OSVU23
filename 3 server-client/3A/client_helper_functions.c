@@ -294,6 +294,9 @@ static arguments parse_arguments(int argc, char *argv[]) {
                 args.port = optarg;
                 break;
 
+
+
+
             case 'o':
                 if (o_set || d_set) usage();
                 o_set = true;
@@ -355,7 +358,13 @@ static arguments parse_arguments(int argc, char *argv[]) {
         struct stat st = {0};
 
         if (stat(args.dir, &st) == -1) {
-            mkdir(args.dir, 0777);
+            if(mkdir(args.dir, 0777) == -1){
+                free(args.hostname);
+                free(args.resource);
+                fprintf(stderr, "[%s] Failed to create directory!\n", PROGRAM_NAME);
+
+                exit(EXIT_FAILURE);
+            }
         }
 
         //check if last character is "/". If yes, add "index.html"
