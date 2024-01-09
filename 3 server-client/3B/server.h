@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 
 #define BUFFER_SIZE 1024
-#define DEFAULT_PORT "8080"
+#define DEFAULT_PORT 8080
 #define DEFAULT_INDEX "index.html"
 
 /**

@@ -14,17 +14,17 @@
  * <br> So please free everything before invoking this function.S
  */
 static void usage(void) {
-    fprintf(stderr, "[%s] USAGE: client [-p PORT] [ -o FILE | -d DIR ] URL\n", PROGRAM_NAME);
+    fprintf(stderr, "[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
     exit(EXIT_FAILURE);
 }
 
 typedef struct arguments {
-    const char *PORT;
-    const char *INDEX;
-    const char *DOC_ROOT;
+    uint16_t PORT;
+    char *INDEX;
+    char *DOC_ROOT;
 } arguments;
 
-int is_valid_port(const char *str) {
+static int is_valid_port(const char *str, arguments *args) {
     char *endptr;
     long port;
 
@@ -34,26 +34,37 @@ int is_valid_port(const char *str) {
     // Check for various possible errors
     if ((errno == ERANGE && (port == LONG_MAX || port == LONG_MIN))
         || (errno != 0 && port == 0)) {
+        fprintf(stderr, "[%s]\n", PROGRAM_NAME);
         perror("strtol");
         return 0;
     }
 
     if (endptr == str) {
-        fprintf(stderr, "No digits were found\n");
+        fprintf(stderr, "[%s]No digits were found\n", PROGRAM_NAME);
         return 0;
     }
 
     // Check for valid port range
-    if (port < 0 || port > 65535) {
-        fprintf(stderr, "Port number out of range\n");
+    if (port < 0 || port > 65535) { //unit16_t are 4 bits. Max Value: 0xFFFF = 65535
+        fprintf(stderr, "[%s] Port number out of range\n", PROGRAM_NAME);
         return 0;
     }
+
+    char string_port[5]; //String can only be 5 chars long
+    sprintf(string_port, "%d", (int) port);
+
+    if (strlen(string_port) != strlen(str)) {
+        fprintf(stderr, "[%s] Not a valid port!\n", PROGRAM_NAME);
+        return 0;
+    }
+
+    args->PORT = port;
 
     // If we're here, str was a valid port number
     return 1;
 }
 
-int file_accessible(const char *filename) {
+static int file_accessible(const char *filename) {
     // Check if the file exists and has read permission
     if (access(filename, F_OK) != -1 && access(filename, R_OK) != -1) {
         return 1; // File exists and is readable
@@ -66,7 +77,7 @@ int file_accessible(const char *filename) {
 // and you can use the S_ISDIR macro to check if it's a directory.
 // Additionally, the access function can be used to check for read and execute permissions,
 // which are typically required for accessing a directory."
-int is_directory_accessible(const char *path) {
+static int is_directory_accessible(const char *path) {
     struct stat path_stat;
 
     // Check if path exists and get its status
@@ -92,60 +103,3 @@ int is_directory_accessible(const char *path) {
     }
 }
 
-arguments parse_args(int argc, char *argv[]) {
-    int opt;
-    arguments args;
-
-    args.PORT = DEFAULT_PORT;
-    args.INDEX = DEFAULT_INDEX;
-
-    bool p_set = false;
-    bool i_set = false;
-
-    while ((opt = getopt(argc, argv, "p:i:")) != -1) {
-        switch (opt) {
-            case 'p':
-                if (p_set == true) usage();
-                p_set = true;
-
-                args.PORT = optarg;
-
-                if (is_valid_port(args.PORT) != 1) {
-                    fprintf(stderr, "[%s] Port must be an integer: [%s]", PROGRAM_NAME, args.PORT);
-                    perror("");
-                    fprintf(stderr, "\n");
-                    usage();
-                }
-
-                break;
-            case 'i':
-                if (i_set == true) usage();
-                i_set = true;
-
-                args.INDEX = optarg;
-
-                if (file_accessible(args.INDEX) != 1) {
-                    fprintf(stderr, "[%s] Cannot open file: [%s]", PROGRAM_NAME, args.INDEX);
-                    perror("");
-                    fprintf(stderr, "\n");
-                    usage();
-                }
-
-                break;
-            case '?':
-                usage();
-            default:
-                usage();
-                assert(0);
-                break;
-        }
-    }
-
-    if (optind > argc) usage();
-    args.DOC_ROOT = argv[optind];
-
-    if (is_directory_accessible(args.DOC_ROOT) != 1) usage();
-
-
-    return args;
-}
