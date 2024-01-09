@@ -148,6 +148,7 @@ static int start_socket(arguments args) {
             continue;
         }
 
+
         if (FD_ISSET(sfd, &readfds)) {
 
             cfd = accept(sfd, NULL, NULL); // Accept the incoming connection
