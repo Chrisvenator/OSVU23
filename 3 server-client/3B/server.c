@@ -139,51 +139,49 @@ static int start_socket(arguments args) {
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
-        int retval = select(sfd, &readfds, NULL, NULL, &timeout);
+        int retval = select(sfd + 1, &readfds, NULL, NULL, &timeout);
 
 
         if (retval == -1) {
-            if (TERMINATE) break; // Break if termination signal received
             perror("Select failed");
+            if (TERMINATE) break; // Break if termination signal received
             continue;
         }
 
-//        if (FD_ISSET(sfd, &readfds) > 0) {
+        if (FD_ISSET(sfd, &readfds)) {
 
-        cfd = accept(sfd, NULL, NULL); // Accept the incoming connection
-        if (cfd == -1) {
-            perror("Accept failed");
-            continue;
-        }
-
-        printf("Reading from client...\n");
-        ssize_t read_size = read(cfd, buffer, BUFFER_SIZE - 1);
-
-        if (read_size == -1) {
-            perror("Read failed");
-            close(cfd);
-            continue;
-        }
-
-        buffer[read_size] = '\0';
-
-
-        // Parse the request
-        if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(cfd, 400, "Bad Request", NULL, NULL);
-        else if (strcmp(method, "GET") != 0) send_response(cfd, 501, "Not Implemented", NULL, NULL);
-        else {
-//            char full_path[PATH_MAX]; //There is no Filepath longer than PATH_MAX
-//            snprintf(full_path, sizeof(full_path), "%s/%s", args.DOC_ROOT, args.INDEX);
-            printf("Sending %s req to client...\n", args.full_path);
-            if (access(args.full_path, F_OK) != -1) {
-                send_response(cfd, 200, "OK", NULL, args.full_path);
-            } else {
-                send_response(cfd, 404, "Not Found", NULL, NULL);
+            cfd = accept(sfd, NULL, NULL); // Accept the incoming connection
+            if (cfd == -1) {
+                perror("Accept failed");
+                continue;
             }
+
+            printf("Reading from client...\n");
+            ssize_t read_size = read(cfd, buffer, BUFFER_SIZE - 1);
+
+            if (read_size == -1) {
+                perror("Read failed");
+                close(cfd);
+                continue;
+            }
+
+            buffer[read_size] = '\0';
+
+
+            // Parse the request
+            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(cfd, 400, "Bad Request", NULL, NULL);
+            else if (strcmp(method, "GET") != 0) send_response(cfd, 501, "Not Implemented", NULL, NULL);
+            else {
+                printf("Sending %s req to client...\n", args.full_path);
+                if (access(args.full_path, F_OK) != -1) {
+                    send_response(cfd, 200, "OK", NULL, args.full_path);
+                } else {
+                    send_response(cfd, 404, "Not Found", NULL, NULL);
+                }
+            }
+            close(cfd);
         }
-        close(cfd);
     }
-//    }
 
 //TODO: Auf -1 überprüfen
     close(cfd);
