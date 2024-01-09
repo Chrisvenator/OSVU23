@@ -103,3 +103,27 @@ static int is_directory_accessible(const char *path) {
     }
 }
 
+// Function to send a response
+void send_response(int cfd, int status, const char *status_message, const char *additional_header, const char *file_path) {
+    char header[BUFFER_SIZE];
+    time_t now;
+    char date[100];
+    int filefd;
+
+    time(&now);
+    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S GMT", gmtime(&now));
+
+    snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nDate: %s\r\nConnection: close\r\n\r\n", status, status_message, date);
+    write(cfd, header, strlen(header));
+
+    if (status == 200 && (filefd = open(file_path, O_RDONLY)) >= 0) {
+        while (1) {
+            ssize_t read_bytes = read(filefd, header, BUFFER_SIZE);
+            if (read_bytes <= 0) break;
+            write(cfd, header, read_bytes);
+        }
+        close(filefd);
+    } else {
+        perror("send response to client");
+    }
+}

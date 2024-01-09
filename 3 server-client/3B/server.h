@@ -10,22 +10,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
 #include <strings.h>
-#include <arpa/inet.h> // inet_addr()
 #include <getopt.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <errno.h>
 #include <limits.h>
-#include <netdb.h>
-#include <sys/stat.h>
+#include <bits/types/sig_atomic_t.h>
 
-#define BUFFER_SIZE 1024
+
+#define BUFFER_SIZE 4048
 #define DEFAULT_PORT 8080
 #define DEFAULT_INDEX "index.html"
+#define LISTEN_BACKLOG 1
 
 /**
  * @brief Name of the Program (agrv[0])
