@@ -84,7 +84,7 @@ test_command "07" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt
 
 echo "" > test.txt
 chmod 0000 test.txt
-test_command "07" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server test.txt" "" "$usage" 1
+test_command "08" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./" "" "$usage" 1
 rm -rf test.txt
 
 

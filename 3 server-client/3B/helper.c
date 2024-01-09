@@ -14,7 +14,7 @@
  * <br> So please free everything before invoking this function.S
  */
 static void usage(void) {
-    fprintf(stderr, "[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
+    fprintf(stderr, "\n[%s] USAGE: server [-p PORT] [-i INDEX] DOC_ROOT\n", PROGRAM_NAME);
     exit(EXIT_FAILURE);
 }
 
