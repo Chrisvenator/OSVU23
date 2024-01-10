@@ -90,10 +90,11 @@ static arguments parse_args(int argc, char *argv[]) {
 // Main function to handle incoming connections
 static int start_socket(arguments args) {
     int socket_fd, connection_fd; //called sfd & cfd in the man pages
+    int opt = 1;
     struct sockaddr_in address;
     struct timeval timeout;
     fd_set readfds;
-    char buffer[BUFFER_SIZE], method[10], path[1024], protocol[10];
+    char buffer[BUFFER_SIZE], method[10], path[PATH_MAX], protocol[10];
 
 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -101,6 +102,14 @@ static int start_socket(arguments args) {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
+
+    // Set SO_REUSEADDR to allow the local address to be reused
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+        perror("Setsockopt SO_REUSEADDR failed");
+        close(socket_fd);
+        exit(EXIT_FAILURE);
+    }
+
 
     memset(&address, 0, sizeof(address));
     address.sin_family = AF_INET;
@@ -143,8 +152,7 @@ static int start_socket(arguments args) {
 
         //Test if the file descriptor is still present
         if (FD_ISSET(socket_fd, &readfds)) {
-
-            connection_fd = accept(socket_fd, NULL, NULL); // Accept the incoming connection
+            connection_fd = accept(socket_fd, NULL, NULL); // Accept the incoming connectio
             if (connection_fd == -1) {
                 perror("Accept failed");
                 continue;
@@ -189,8 +197,9 @@ static int start_socket(arguments args) {
     }
 
 //TODO: Auf -1 überprüfen
-    close(connection_fd);
-    close(socket_fd);
+    if (close(socket_fd) == -1) {
+        perror("Closing socket failed!");
+    } else printf("Socket closed.\n");
 //    unlink()
     return 0;
 }
