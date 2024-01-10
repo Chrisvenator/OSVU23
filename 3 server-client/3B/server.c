@@ -69,11 +69,6 @@ static arguments parse_args(int argc, char *argv[]) {
 
                 args.INDEX = optarg;
 
-                if (file_accessible(args.INDEX) != 1) {
-                    fprintf(stderr, "[%s] Cannot open file: [%s]", PROGRAM_NAME, args.INDEX);
-                    usage();
-                }
-
                 break;
             case '?':
                 usage();
@@ -93,11 +88,23 @@ static arguments parse_args(int argc, char *argv[]) {
     args.DOC_ROOT = argv[optind];
 
 
+
+
     if (is_directory_accessible(args.DOC_ROOT) != 1) usage();
     if (strlen(args.DOC_ROOT) + strlen(args.INDEX) + 1 >= PATH_MAX) {
         fprintf(stderr, "[%s] The maximum length of a Path is %d characters!", PROGRAM_NAME, PATH_MAX);
         usage();
     }
+
+    char *index_path = malloc(sizeof(char *) * PATH_MAX);
+    snprintf(index_path, PATH_MAX, "%s/%s", args.DOC_ROOT, args.INDEX);
+    if (file_accessible(index_path) != 1) {
+        fprintf(stderr, "[%s] Cannot open file: [%s]\n", PROGRAM_NAME, index_path);
+        free(index_path);
+        usage();
+    }
+    free(index_path);
+
 
     return args;
 }
@@ -198,8 +205,8 @@ static int start_socket(arguments args) {
 
 
             // Parse the request
-            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "Bad Request", NULL);
-            else if (strcmp(method, "GET") != 0) send_response(connection_fd, 400, "(Bad Request)", NULL);
+            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "(Bad Request)", NULL);
+            else if (strcmp(method, "GET") != 0) send_response(connection_fd, 501, "(Not Implemented)", NULL);
             else {
                 char *requested_resource = malloc(sizeof(char *) * PATH_MAX);
                 snprintf(requested_resource, PATH_MAX, "%s/%s", args.DOC_ROOT, strcmp(path, "/") == 0 ? args.INDEX : path);
@@ -211,7 +218,7 @@ static int start_socket(arguments args) {
                     printf("Sending %s req to client...\n", requested_resource);
                     send_response(connection_fd, 200, "OK", requested_resource);
                 } else {
-                    send_response(connection_fd, 400, "(Bad Request)", NULL);
+                    send_response(connection_fd, 404, "(Not Found)", NULL);
                 }
 
                 free(requested_resource);
