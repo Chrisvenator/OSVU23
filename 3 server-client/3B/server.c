@@ -26,20 +26,17 @@ int main(int argc, char *argv[]) {
     printf("INDEX: %s\n", args.INDEX);
     printf("DOC_ROOT: %s\n", args.DOC_ROOT);
 
-//    setup_signal_handling();
-
-    start_socket(args);
-
-
-    exit(EXIT_SUCCESS);
+    exit(start_socket(args));
 }
 
 /**
- * @brief
- * @details
- * @param argc
- * @param argv
- * @return
+ * @brief Parses command line arguments.
+ * @details This function parses command line arguments to configure server settings. It extracts the port number,
+ *          index file name, and document root directory. It validates the provided arguments and sets defaults
+ *          where necessary. Arguments are expected in the format `-p [port] -i [index]`.
+ * @param argc Number of command line arguments.
+ * @param argv Array of command line argument strings.
+ * @return A structure of type 'arguments' containing the parsed and validated command line arguments.
  */
 static arguments parse_args(int argc, char *argv[]) {
     if (argc <= 0) usage();
@@ -80,6 +77,7 @@ static arguments parse_args(int argc, char *argv[]) {
                 break;
             case '?':
                 usage();
+                break;
             default:
                 usage();
                 assert(0);
@@ -106,12 +104,14 @@ static arguments parse_args(int argc, char *argv[]) {
 
 
 /**
- * @brief
- * @details
- * @param args
- * @return
+ * @brief Initializes and starts the server socket.
+ * @details Sets up a TCP socket for the server, binds it to the specified port, and listens for incoming connections.
+ *          It handles incoming connections, parses HTTP requests, and sends appropriate responses. Implements a
+ *          simple select-based mechanism to handle multiple connections. Also includes error handling and graceful
+ *          shutdown on receiving a termination signal.
+ * @param args A structure containing the server configuration parameters such as port and document root.
+ * @return An integer indicating the success or failure of the operation.
  */
-// Main function to handle incoming connections
 static int start_socket(arguments args) {
     int socket_fd, connection_fd; //called sfd & cfd in the man pages
     int opt = 1;
@@ -124,14 +124,14 @@ static int start_socket(arguments args) {
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd == -1) {
         perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     // Set SO_REUSEADDR to allow the local address to be reused
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
         perror("Setsockopt SO_REUSEADDR failed");
         close(socket_fd);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
@@ -143,13 +143,13 @@ static int start_socket(arguments args) {
     if (bind(socket_fd, (struct sockaddr *) &address, sizeof(address)) == -1) {
         perror("Bind failed");
         close(socket_fd);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     if (listen(socket_fd, LISTEN_BACKLOG) == -1) {
         perror("Listen failed");
         close(socket_fd);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     // Register signal handler for graceful shutdown
@@ -224,5 +224,5 @@ static int start_socket(arguments args) {
         perror("Closing socket failed!");
     } else printf("Socket closed.\n");
 //    unlink() // For TCP/IP sockets (which use the Internet address family, AF_INET), unlink() is not relevant.
-    return 0;
+    return EXIT_SUCCESS;
 }

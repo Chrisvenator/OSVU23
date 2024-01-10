@@ -29,8 +29,12 @@ static void usage(void) {
 }
 
 /**
- * @brief
- * @details
+ * @brief Structure to hold server configuration arguments.
+ * @details Contains server configuration parameters such as the port number, index file name, and document root
+ *          directory, which are parsed from the command line arguments.
+ * @param PORT The port number on which the server will listen.
+ * @param INDEX The name of the index file (e.g., 'index.html').
+ * @param DOC_ROOT The root directory from which files will be served.
  */
 typedef struct arguments {
     uint16_t PORT;
@@ -39,18 +43,20 @@ typedef struct arguments {
 } arguments;
 
 /**
- * @brief
- * @details
+ * @brief Global flag indicating server termination.
+ * @details This variable is set to 'true' by the signal handler to indicate that the server should terminate.
+ * @note Note that sig_atomic_t is not thread-safe, but is asynchronous-signal safe, making it suitable for
+ *          use in this context.
  */
-//Note that sig_atomic_t is not thread-safe, only async-signal safe.
 volatile sig_atomic_t TERMINATE = false;
 
 /**
- * @brief
- * @details
- * @param str
- * @param args
- * @return
+ * @brief Validates the provided port number.
+ * @details Checks if the given port number is within the valid range and is usable. This function is typically
+ *          called during argument parsing to ensure the port number provided is suitable for socket operations.
+ * @param str The port number to validate.
+ * @param args Arguments where the port number will be saved
+ * @return An integer indicating if the port is valid (1) or invalid (0).
  */
 static int is_valid_port(const char *str, arguments *args) {
     char *endptr;
@@ -93,10 +99,11 @@ static int is_valid_port(const char *str, arguments *args) {
 }
 
 /**
- * @brief
- * @details
- * @param filename
- * @return
+ * @brief Checks file accessibility.
+ * @details Verifies if the given file path points to an accessible file. This is used to ensure that the server
+ *          can access and serve the requested file.
+ * @param filename The path to the file to check.
+ * @return An integer indicating if the file is accessible (1) or not (0).
  */
 static int file_accessible(const char *filename) {
     // Check if the file exists and has read permission
@@ -108,10 +115,11 @@ static int file_accessible(const char *filename) {
 }
 
 /**
- * @brief
- * @details
- * @param path
- * @return
+ * @brief Checks directory accessibility.
+ * @details Verifies if the given directory path is accessible and readable. This is important for the server to
+ *          validate the document root directory provided in the command line arguments.
+ * @param path The path to the directory to check.
+ * @return An integer indicating if the directory is accessible (1) or not (0).
  */
 //"The stat function allows you to obtain information about the file system object specified by the path,
 // and you can use the S_ISDIR macro to check if it's a directory.
@@ -144,15 +152,16 @@ static int is_directory_accessible(const char *path) {
 }
 
 /**
- * @brief
- * @details
- * @param cfd
- * @param status
- * @param status_message
- * @param file_path
+ * @brief Sends an HTTP response to the client.
+ * @details Constructs and sends an HTTP response based on the provided status code, status message, and file path.
+ *          For successful requests (status 200), it sends the requested file's content. For unsuccessful requests,
+ *          it sends only the status header. Handles file opening, reading, and closing operations internally.
+ * @param client_fd Client file descriptor to which the response is sent.
+ * @param status HTTP status code (e.g., 200 for OK, 400 for Everything else).
+ * @param status_message A brief message corresponding to the HTTP status code.
+ * @param file_path The path to the file that needs to be sent in case of a successful request.
  */
-// Function to send a response
-static void send_response(int cfd, int status, const char *status_message, const char *file_path) {
+static void send_response(int client_fd, int status, const char *status_message, const char *file_path) {
     char header[BUFFER_SIZE];
     int file_fd;
     struct stat file_stat;
@@ -164,29 +173,30 @@ static void send_response(int cfd, int status, const char *status_message, const
 
         // Send header with content length
         snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nDate: Thu, 1 Dec 20 12:00:00\r\nContent-Length: %zu\r\nConnection: close\r\n\r\n", status, status_message, content_length);
-        write(cfd, header, strlen(header));
+        write(client_fd, header, strlen(header));
 
         // Send file content
         while (1) {
             ssize_t read_bytes = read(file_fd, header, BUFFER_SIZE);
             if (read_bytes <= 0) break;
-            write(cfd, header, read_bytes);
+            write(client_fd, header, read_bytes);
         }
         close(file_fd);
     } else {
         // Send response without content length (for errors)
         snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n", status, status_message);
-        write(cfd, header, strlen(header));
+        write(client_fd, header, strlen(header));
         fprintf(stderr, "[%s], File: %s not found! ", PROGRAM_NAME, file_path);
         perror("send response to client");
     }
 }
 
 /**
- * @brief
- * @details
+ * @brief Signal handler for graceful shutdown.
+ * @details Sets a global flag to indicate that the server should terminate. This function is designed to be
+ *          registered as a signal handler for signals like SIGINT or SIGTERM, allowing for a graceful shutdown
+ *          of the server.
  */
-// Signal handler for graceful shutdown
 static void handle_signal() {
     TERMINATE = true;
 }
