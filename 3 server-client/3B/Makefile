@@ -11,7 +11,7 @@ compiler = gcc
 c_flags = -std=c99 -pedantic -Wall -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_POSIX_C_SOURCE=200809L -g
 
 
-all: clean $(project_name) #TODO: REMOVE THIS clean!!!!
+all: $(project_name)
 
 # Define a generic rule to build an executable from its corresponding object file (%.o)
 $(project_name): %: %.o
