@@ -94,11 +94,6 @@ mkdir my_website
 #echo "test123" > my_website/test.txt
 #echo "index" > my_website/index.html
 
-## TODO:
-#test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server ./my_website" "" "" 0
-#test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./my_website" "" "" 0
-
-
 
 
 
