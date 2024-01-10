@@ -104,14 +104,14 @@ static int is_valid_port(const char *str, arguments *args) {
  * @param filename The path to the file to check.
  * @return An integer indicating if the file is accessible (1) or not (0).
  */
-static int file_accessible(const char *filename) {
-    // Check if the file exists and has read permission
-    if (access(filename, F_OK) != -1 && access(filename, R_OK) != -1) {
-        return 1; // File exists and is readable
-    } else {
-        return 0; // File does not exist or is not readable
-    }
-}
+//static int file_accessible(const char *filename) {
+//    // Check if the file exists and has read permission
+//    if (access(filename, F_OK) != -1 && access(filename, R_OK) != -1) {
+//        return 1; // File exists and is readable
+//    } else {
+//        return 0; // File does not exist or is not readable
+//    }
+//}
 
 /**
  * @brief Checks directory accessibility.

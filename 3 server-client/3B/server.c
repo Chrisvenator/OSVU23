@@ -88,8 +88,6 @@ static arguments parse_args(int argc, char *argv[]) {
     args.DOC_ROOT = argv[optind];
 
 
-
-
     if (is_directory_accessible(args.DOC_ROOT) != 1) usage();
     if (strlen(args.DOC_ROOT) + strlen(args.INDEX) + 1 >= PATH_MAX) {
         fprintf(stderr, "[%s] The maximum length of a Path is %d characters!", PROGRAM_NAME, PATH_MAX);
@@ -205,7 +203,7 @@ static int start_socket(arguments args) {
 
 
             // Parse the request
-            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "(Bad Request)", NULL);
+            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3 || strcmp(protocol, "HTTP/1.1") != 0) send_response(connection_fd, 400, "(Bad Request)", NULL);
             else if (strcmp(method, "GET") != 0) send_response(connection_fd, 501, "(Not Implemented)", NULL);
             else {
                 char *requested_resource = malloc(sizeof(char *) * PATH_MAX);
