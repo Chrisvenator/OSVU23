@@ -1,6 +1,19 @@
-//
-// Created by junioradmin on 09.01.24.
-//
+/**
+ * @author Christopher Scherling 12119060
+ * @file server.h
+ * @date 10.01.2024
+ *
+ *
+ * @brief Header file for OSVU23 network server.
+ *
+ * @details
+ * This header file contains necessary declarations for setting up and managing a network client
+ * for the OSVU23 project. It includes standard libraries required for network communication,
+ * defines constants for buffer sizes and default ports, and declares a structure for argument
+ * handling in the client application.
+ *
+ * @note This file should be included in the client source files of the OSVU23 server project.
+ */
 
 #ifndef OSVU23_SERVER_H
 #define OSVU23_SERVER_H

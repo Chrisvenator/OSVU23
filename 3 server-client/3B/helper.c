@@ -1,6 +1,15 @@
-//
-// Created by junioradmin on 09.01.24.
-//
+/**
+ * @author Christopher Scherling 12119060
+ * @file helper.c
+ * @date 10.01.2024
+ *
+ *
+ * @brief
+ *
+ * @details
+ *
+ * @note
+ */
 #include "server.h"
 
 /**
@@ -19,15 +28,30 @@ static void usage(void) {
     exit(EXIT_FAILURE);
 }
 
+/**
+ * @brief
+ * @details
+ */
 typedef struct arguments {
     uint16_t PORT;
     char *INDEX;
     char *DOC_ROOT;
 } arguments;
 
+/**
+ * @brief
+ * @details
+ */
 //Note that sig_atomic_t is not thread-safe, only async-signal safe.
 volatile sig_atomic_t TERMINATE = false;
 
+/**
+ * @brief
+ * @details
+ * @param str
+ * @param args
+ * @return
+ */
 static int is_valid_port(const char *str, arguments *args) {
     char *endptr;
     long port;
@@ -68,6 +92,12 @@ static int is_valid_port(const char *str, arguments *args) {
     return 1;
 }
 
+/**
+ * @brief
+ * @details
+ * @param filename
+ * @return
+ */
 static int file_accessible(const char *filename) {
     // Check if the file exists and has read permission
     if (access(filename, F_OK) != -1 && access(filename, R_OK) != -1) {
@@ -77,6 +107,12 @@ static int file_accessible(const char *filename) {
     }
 }
 
+/**
+ * @brief
+ * @details
+ * @param path
+ * @return
+ */
 //"The stat function allows you to obtain information about the file system object specified by the path,
 // and you can use the S_ISDIR macro to check if it's a directory.
 // Additionally, the access function can be used to check for read and execute permissions,
@@ -107,6 +143,14 @@ static int is_directory_accessible(const char *path) {
     }
 }
 
+/**
+ * @brief
+ * @details
+ * @param cfd
+ * @param status
+ * @param status_message
+ * @param file_path
+ */
 // Function to send a response
 static void send_response(int cfd, int status, const char *status_message, const char *file_path) {
     char header[BUFFER_SIZE];
@@ -138,7 +182,10 @@ static void send_response(int cfd, int status, const char *status_message, const
     }
 }
 
-
+/**
+ * @brief
+ * @details
+ */
 // Signal handler for graceful shutdown
 static void handle_signal() {
     TERMINATE = true;

@@ -1,4 +1,15 @@
-// Header files
+/**
+ * @author Christopher Scherling 12119060
+ * @file helper.c
+ * @date 10.01.2024
+ *
+ *
+ * @brief
+ *
+ * @details
+ *
+ * @note
+ */
 #include "helper.c"
 
 static int start_socket(arguments args);
@@ -23,6 +34,13 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief
+ * @details
+ * @param argc
+ * @param argv
+ * @return
+ */
 static arguments parse_args(int argc, char *argv[]) {
     if (argc <= 0) usage();
     PROGRAM_NAME = argv[0];
@@ -87,6 +105,12 @@ static arguments parse_args(int argc, char *argv[]) {
 }
 
 
+/**
+ * @brief
+ * @details
+ * @param args
+ * @return
+ */
 // Main function to handle incoming connections
 static int start_socket(arguments args) {
     int socket_fd, connection_fd; //called sfd & cfd in the man pages
@@ -196,10 +220,9 @@ static int start_socket(arguments args) {
         }
     }
 
-//TODO: Auf -1 überprüfen
     if (close(socket_fd) == -1) {
         perror("Closing socket failed!");
     } else printf("Socket closed.\n");
-//    unlink()
+//    unlink() // For TCP/IP sockets (which use the Internet address family, AF_INET), unlink() is not relevant.
     return 0;
 }
