@@ -21,7 +21,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <limits.h>
-#include <bits/types/sig_atomic_t.h>
 #include <linux/limits.h>
 #include <sys/select.h>
 
