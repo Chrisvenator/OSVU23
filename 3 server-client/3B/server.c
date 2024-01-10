@@ -96,14 +96,14 @@ static arguments parse_args(int argc, char *argv[]) {
         usage();
     }
 
-    char *index_path = malloc(sizeof(char *) * PATH_MAX);
-    snprintf(index_path, PATH_MAX, "%s/%s", args.DOC_ROOT, args.INDEX);
-    if (file_accessible(index_path) != 1) {
-        fprintf(stderr, "[%s] Cannot open file: [%s]\n", PROGRAM_NAME, index_path);
-        free(index_path);
-        usage();
-    }
-    free(index_path);
+//    char *index_path = malloc(sizeof(char *) * PATH_MAX);
+//    snprintf(index_path, PATH_MAX, "%s/%s", args.DOC_ROOT, args.INDEX);
+//    if (file_accessible(index_path) != 1) {
+//        fprintf(stderr, "[%s] Cannot open file: [%s]\n", PROGRAM_NAME, index_path);
+//        free(index_path);
+//        usage();
+//    }
+//    free(index_path);
 
 
     return args;
