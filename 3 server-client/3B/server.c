@@ -83,43 +83,39 @@ static arguments parse_args(int argc, char *argv[]) {
         usage();
     }
 
-    if (snprintf(args.full_path, sizeof(args.full_path), "%s/%s", args.DOC_ROOT, args.INDEX) <= 0) {
-        fprintf(stderr, "[%s] Something went wrong while calculating the path for the index...", PROGRAM_NAME);
-        usage();
-    }
-
-
     return args;
 }
 
 
 // Main function to handle incoming connections
 static int start_socket(arguments args) {
-    int sfd, cfd;
-    struct sockaddr_in my_addr;
+    int socket_fd, connection_fd; //called sfd & cfd in the man pages
+    struct sockaddr_in address;
+    struct timeval timeout;
+    fd_set readfds;
     char buffer[BUFFER_SIZE], method[10], path[1024], protocol[10];
 
 
-    sfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sfd == -1) {
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd == -1) {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    memset(&my_addr, 0, sizeof(my_addr));
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_port = htons(args.PORT);
-    my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(args.PORT);
+    address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sfd, (struct sockaddr *) &my_addr, sizeof(my_addr)) == -1) {
+    if (bind(socket_fd, (struct sockaddr *) &address, sizeof(address)) == -1) {
         perror("Bind failed");
-        close(sfd);
+        close(socket_fd);
         exit(EXIT_FAILURE);
     }
 
-    if (listen(sfd, LISTEN_BACKLOG) == -1) {
+    if (listen(socket_fd, LISTEN_BACKLOG) == -1) {
         perror("Listen failed");
-        close(sfd);
+        close(socket_fd);
         exit(EXIT_FAILURE);
     }
 
@@ -128,65 +124,73 @@ static int start_socket(arguments args) {
     signal(SIGTERM, handle_signal);
     signal(SIGQUIT, handle_signal);
 
-    fd_set readfds;
-    struct timeval timeout;
 
     while (!TERMINATE) {
-        FD_ZERO(&readfds);
-        FD_SET(sfd, &readfds);
+        FD_ZERO(&readfds); //Removes file descriptors from pointer
+        FD_SET(socket_fd, &readfds); //Adds file descriptors from pointer
 
         // Set timeout to 1 second
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
-        int retval = select(sfd + 1, &readfds, NULL, NULL, &timeout);
 
-
-        if (retval == -1) {
+        if (select(socket_fd + 1, &readfds, NULL, NULL, &timeout) == -1) {
             perror("Select failed");
             if (TERMINATE) break; // Break if termination signal received
             continue;
         }
 
 
-        if (FD_ISSET(sfd, &readfds)) {
+        //Test if the file descriptor is still present
+        if (FD_ISSET(socket_fd, &readfds)) {
 
-            cfd = accept(sfd, NULL, NULL); // Accept the incoming connection
-            if (cfd == -1) {
+            connection_fd = accept(socket_fd, NULL, NULL); // Accept the incoming connection
+            if (connection_fd == -1) {
                 perror("Accept failed");
                 continue;
-            }
+            } else printf("Connection accepted...\n");
 
-            printf("Reading from client...\n");
-            ssize_t read_size = read(cfd, buffer, BUFFER_SIZE - 1);
+
+            // We don't need to check the whole request since we only need the first line.
+            // If the first line is incorrect, we return some 400 status
+            ssize_t read_size = read(connection_fd, buffer, BUFFER_SIZE - 1);
+
 
             if (read_size == -1) {
                 perror("Read failed");
-                close(cfd);
+                close(connection_fd);
                 continue;
-            }
+            } else printf("Reading from client...\n");
 
             buffer[read_size] = '\0';
 
 
             // Parse the request
-            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(cfd, 400, "Bad Request", NULL, NULL);
-            else if (strcmp(method, "GET") != 0) send_response(cfd, 501, "Not Implemented", NULL, NULL);
+            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "Bad Request", NULL, NULL);
+            else if (strcmp(method, "GET") != 0) send_response(connection_fd, 501, "Not Implemented", NULL, NULL);
             else {
-                printf("Sending %s req to client...\n", args.full_path);
-                if (access(args.full_path, F_OK) != -1) {
-                    send_response(cfd, 200, "OK", NULL, args.full_path);
+                fprintf(stdout, "Client requested: method: %s, path: %s, protocol: %s", method, path, protocol);
+
+                char *requested_resource = malloc(sizeof(char *) * PATH_MAX);
+
+                snprintf(requested_resource, PATH_MAX, "%s%s", args.DOC_ROOT, strcmp(path, "/") == 0 ? args.INDEX : path);
+
+                if (access(requested_resource, F_OK) != -1) {
+                    printf("Sending %s req to client...\n", requested_resource);
+                    send_response(connection_fd, 200, "OK", NULL, requested_resource);
                 } else {
-                    send_response(cfd, 404, "Not Found", NULL, NULL);
+                    send_response(connection_fd, 404, "Not Found", NULL, NULL);
                 }
+
+                free(requested_resource);
             }
-            close(cfd);
+            close(connection_fd);
         }
     }
 
 //TODO: Auf -1 überprüfen
-    close(cfd);
-    close(sfd);
+    close(connection_fd);
+    close(socket_fd);
 //    unlink()
     return 0;
 }

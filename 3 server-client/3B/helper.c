@@ -23,7 +23,6 @@ typedef struct arguments {
     uint16_t PORT;
     char *INDEX;
     char *DOC_ROOT;
-    char full_path[PATH_MAX];
 } arguments;
 
 static int is_valid_port(const char *str, arguments *args) {
