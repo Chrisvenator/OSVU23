@@ -174,20 +174,20 @@ static int start_socket(arguments args) {
 
 
             // Parse the request
-            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "Bad Request", NULL, NULL);
-            else if (strcmp(method, "GET") != 0) send_response(connection_fd, 501, "Not Implemented", NULL, NULL);
+            if (sscanf(buffer, "%s %s %s", method, path, protocol) != 3) send_response(connection_fd, 400, "Bad Request", NULL);
+            else if (strcmp(method, "GET") != 0) send_response(connection_fd, 400, "(Bad Request)", NULL);
             else {
-                fprintf(stdout, "Client requested: method: %s, path: %s, protocol: %s", method, path, protocol);
-
                 char *requested_resource = malloc(sizeof(char *) * PATH_MAX);
+                snprintf(requested_resource, PATH_MAX, "%s/%s", args.DOC_ROOT, strcmp(path, "/") == 0 ? args.INDEX : path);
 
-                snprintf(requested_resource, PATH_MAX, "%s%s", args.DOC_ROOT, strcmp(path, "/") == 0 ? args.INDEX : path);
+                fprintf(stdout, "Client requested: method: %s, protocol: %s, path: %s, Index: %s,  Resource path: %s\n", method, protocol, path, args.INDEX, requested_resource);
+
 
                 if (access(requested_resource, F_OK) != -1) {
                     printf("Sending %s req to client...\n", requested_resource);
-                    send_response(connection_fd, 200, "OK", NULL, requested_resource);
+                    send_response(connection_fd, 200, "OK", requested_resource);
                 } else {
-                    send_response(connection_fd, 404, "Not Found", NULL, NULL);
+                    send_response(connection_fd, 400, "(Bad Request)", NULL);
                 }
 
                 free(requested_resource);

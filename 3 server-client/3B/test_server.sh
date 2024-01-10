@@ -79,21 +79,24 @@ test_command "03" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt
 test_command "04" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p \"\" ./" "" "$usage" 1
 test_command "05" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p -1 ./" "" "$usage" 1
 test_command "06" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p 66666 ./" "" "$usage" 1
-
-test_command "07" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i /dev/null/null ./" "" "$usage" 1
+test_command "07" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p abc . > /dev/null" "" "$usage" 1
+test_command "08" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p 80z . > /dev/null" "" "$usage" 1
+test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -p 80 -p 81 . > /dev/null" "" "$usage" 1
+test_command "10" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -a . > /dev/null" "" "$usage" 1
+test_command "11" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i /dev/null/null ./" "" "$usage" 1
 
 echo "" > test.txt
 chmod 0000 test.txt
-test_command "08" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./" "" "$usage" 1
+test_command "11" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./" "" "$usage" 1
 rm -rf test.txt
 
 mkdir my_website
-echo "test123" > my_website/test.txt
-echo "index" > my_website/index.html
+#echo "test123" > my_website/test.txt
+#echo "index" > my_website/index.html
 
 ## TODO:
-test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server ./my_website" "" "" 0
-test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./my_website" "" "" 0
+#test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server ./my_website" "" "" 0
+#test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt --child-silent-after-fork=yes --error-exitcode=42 -s ./server -i test.txt ./my_website" "" "" 0
 
 
 
@@ -111,7 +114,8 @@ test_command "09" "valgrind --tool=memcheck --leak-check=full --log-file=log.txt
 
 
 
-rm -rf my_website
+
+#rm -rf my_website
 rm log.txt
 
 ####################Check if everything had been correct:

@@ -25,6 +25,9 @@ typedef struct arguments {
     char *DOC_ROOT;
 } arguments;
 
+//Note that sig_atomic_t is not thread-safe, only async-signal safe.
+volatile sig_atomic_t TERMINATE = false;
+
 static int is_valid_port(const char *str, arguments *args) {
     char *endptr;
     long port;
@@ -105,36 +108,38 @@ static int is_directory_accessible(const char *path) {
 }
 
 // Function to send a response
-void send_response(int cfd, int status, const char *status_message, const char *additional_header, const char *file_path) {
+static void send_response(int cfd, int status, const char *status_message, const char *file_path) {
     char header[BUFFER_SIZE];
-    time_t now;
-    char date[100];
-    int filefd;
+    int file_fd;
+    struct stat file_stat;
 
-    time(&now);
-    strftime(date, sizeof(date), "Date: %a, %d %b %Y %H:%M:%S GMT", gmtime(&now));
+    if (status == 200 && (file_fd = open(file_path, O_RDONLY)) != -1) {
+        // Get file size
+        fstat(file_fd, &file_stat);
+        size_t content_length = file_stat.st_size;
 
-    snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nDate: %s\r\nConnection: close\r\n\r\n", status, status_message, date);
-    write(cfd, header, strlen(header));
+        // Send header with content length
+        snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nDate: Thu, 1 Dec 20 12:00:00\r\nContent-Length: %zu\r\nConnection: close\r\n\r\n", status, status_message, content_length);
+        write(cfd, header, strlen(header));
 
-    if (status == 200 && (filefd = open(file_path, O_RDONLY)) >= 0) {
+        // Send file content
         while (1) {
-            ssize_t read_bytes = read(filefd, header, BUFFER_SIZE);
+            ssize_t read_bytes = read(file_fd, header, BUFFER_SIZE);
             if (read_bytes <= 0) break;
             write(cfd, header, read_bytes);
         }
-        close(filefd);
+        close(file_fd);
     } else {
+        // Send response without content length (for errors)
+        snprintf(header, sizeof(header), "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n", status, status_message);
+        write(cfd, header, strlen(header));
         fprintf(stderr, "[%s], File: %s not found! ", PROGRAM_NAME, file_path);
         perror("send response to client");
     }
 }
 
-//TODO: Capslock
-//Note that sig_atomic_t is not thread-safe, only async-signal safe.
-volatile sig_atomic_t TERMINATE = false;
 
 // Signal handler for graceful shutdown
-void handle_signal(int sig) {
+static void handle_signal() {
     TERMINATE = true;
 }
