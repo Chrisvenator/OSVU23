@@ -11,6 +11,8 @@
  * @note
  */
 #include "helper.c"
+#include <signal.h>
+#include <bits/sigaction.h>
 
 static int start_socket(arguments args);
 
@@ -158,9 +160,21 @@ static int start_socket(arguments args) {
     }
 
     // Register signal handler for graceful shutdown
-    signal(SIGINT, handle_signal);
-    signal(SIGTERM, handle_signal);
-    signal(SIGQUIT, handle_signal);
+//    signal(SIGINT, handle_signal);
+//    signal(SIGTERM, handle_signal);
+//    signal(SIGQUIT, handle_signal);
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handle_signal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;  // or SA_RESTART to automatically restart interrupted system calls
+
+    if (sigaction(SIGINT, &sa, NULL) == -1  || sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGQUIT, &sa, NULL) == -1) {
+        perror("sigaction SIGINT failed");
+        close(socket_fd);
+        exit(EXIT_FAILURE);
+    }
 
 
     while (!TERMINATE) {
