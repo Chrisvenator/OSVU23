@@ -94,7 +94,7 @@ static void performHttpGet(arguments args) {
     }
 
     // Convert socket to file pointer for easier handling
-    FILE *sockfile = fdopen(sockfd, "r+");
+    FILE *sockfile = fdopen(sockfd, "w+");
     if (sockfile == NULL) {
         fprintf(stderr, "[%s] ", PROGRAM_NAME);
         perror("fdopen failed\n");
