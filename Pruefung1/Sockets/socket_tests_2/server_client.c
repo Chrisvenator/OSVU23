@@ -117,10 +117,21 @@ static int TERMINATE = EXIT_SUCCESS;
 int socked_fd; //Global variable so that we don't have to pass it to each function
 static struct addrinfo hints, *ai; //struct hints & struct address info (ai) = res (result)
 
+void err(char *str) {
+    printf("%s: ", str);
+    perror("");
+    close(socked_fd);
+    freeaddrinfo(ai);
+    exit(EXIT_FAILURE);
+}
 
 //TODO: Handle signal
 static void handle_signal(int signal) {
     printf("Terminate signal recieved\n");
+    close(socked_fd);
+    freeaddrinfo(ai);
+
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {
@@ -151,6 +162,9 @@ void start_client() {
     fprintf(stdout, "task 1 success\n");
 
     //TODO: Reroute signal here start
+    signal(SIGTERM, handle_signal);
+    signal(SIGQUIT, handle_signal);
+    signal(SIGKILL, handle_signal);
     //TODO: Reroute signal here end
 
     client_task_2(&socked_fd);
@@ -165,14 +179,31 @@ void client_task_1() {
     hints.ai_socktype = SOCK_STREAM;
 
     // Task 5: Implementieren Sie die Socket-Erstellung und Initialisierung für den Client.
+    if (getaddrinfo(NULL, PORT, &hints, &ai) < 0) err("gettaddrinfo");
+
+    socked_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (socked_fd < 0) err("socket");
 }
 
 void client_task_2() {
     // Task 6: Verbinden Sie den Client-Socket mit dem Server.
+    if (connect(socked_fd, ai->ai_addr, ai->ai_addrlen) < 0) err("connect");
+
 }
 
 void client_task_3() {
     // Task 7: Senden Sie eine Nachricht vom Client zum Server.
+    FILE *file = fdopen(socked_fd, "w+");
+    if (file == NULL) err("file open");
+    fprintf(file, "Nachricht123!\n");
+    fflush(file);
+    fclose(file);
+    printf("Message sent to Server\n");
+
+
+    close(socked_fd);
+    freeaddrinfo(ai);
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -188,11 +219,15 @@ void start_server() {
     fprintf(stdout, "task 3 success\n");
 
     //TODO: HANDLE SIGNAL HERE start:
+    signal(SIGTERM, handle_signal);
+    signal(SIGQUIT, handle_signal);
+    signal(SIGKILL, handle_signal);
     //TODO: HANDLE SIGNAL HERE ende
 
     server_task_4(socked_fd);
     fprintf(stdout, "task 4 success\n");
 }
+
 
 void server_task_1() {
     memset(&hints, 0, sizeof hints);
@@ -201,14 +236,21 @@ void server_task_1() {
     hints.ai_flags = AI_PASSIVE;
 
     // Task 1: Implementieren Sie die Socket-Erstellung und Initialisierung für den Server.
+    int addr = getaddrinfo(NULL, PORT, &hints, &ai);
+    if (addr != 0) err("addrinfo");
+
+    socked_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (socked_fd < 0) err("socket");
 }
 
 void server_task_2() {
     // Task 2: Binden Sie den Server-Socket an die richtige Adresse und Port.
+    if (bind(socked_fd, ai->ai_addr, ai->ai_addrlen) < 0) err("bind");
 }
 
 void server_task_3() {
     // Task 3: Bringen Sie den Server-Socket dazu, auf eingehende Verbindungen zu warten.
+    if (listen(socked_fd, 0) < 0) err("listen");
 }
 
 void server_task_4() {
@@ -217,10 +259,27 @@ void server_task_4() {
     while (TERMINATE == EXIT_SUCCESS) {
 
         printf("Waiting for connection...\n");
+        int conn_fd = accept(socked_fd, NULL, NULL);
+        if (conn_fd < 0) err("accept");
 
         printf("connection accepted\n");
+        char buffer[BUFFER_SIZE];
+
+        size_t read_size = read(conn_fd, buffer, BUFFER_SIZE - 1);
+        if (read_size < 0) continue;
+
+        buffer[read_size] = '\0';
 
         printf("Received message: ");
+        fprintf(stdout, "%s\n", buffer);
+
+        write(conn_fd, "recieved", strlen("recieved"));
+
+        close(conn_fd);
     }
+
+    close(socked_fd);
+    freeaddrinfo(ai);
+    exit(EXIT_SUCCESS);
 }
 

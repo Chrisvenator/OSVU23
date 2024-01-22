@@ -276,12 +276,7 @@ void server_task_3(int socked_fd) {
 
 void server_task_4(int socked_fd) {
     // Task 4: Akzeptieren Sie eine eingehende Verbindung und lesen Sie die Nachricht.
-
-//    struct timeval timeout;
-
     while (TERMINATE == EXIT_SUCCESS) {
-//        timeout.tv_sec = 1;
-//        timeout.tv_usec = 0;
 
         printf("Waiting for connection...\n");
         int connection_fd = accept(socked_fd, NULL, NULL);
@@ -300,6 +295,7 @@ void server_task_4(int socked_fd) {
 
         printf("Our message: ");
         printf("%s\n\n", buffer);
+
         close(connection_fd);
     }
 
